@@ -49,6 +49,8 @@ public sealed class Combatant
         Description = string.Empty;
         MaxHp = maxHp;
         CurrentHp = maxHp;
+        MaxHpLocked = true;
+        InitiativeLocked = true;
     }
 
     /// <summary>Reconstructs a combatant with exact saved state (used when loading from a file). Named rolls and counters are added separately.</summary>
