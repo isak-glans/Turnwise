@@ -1,15 +1,41 @@
 @inherits EncounterStateAwareComponentBase
 @inject EncounterService EncounterService
+@inject CharacterTemplateService CharacterTemplateService
+@inject FileDownloadService FileDownload
 
 <div class="panel card">
     @if (State.SelectedCombatant is null)
     {
+        <div class="panel-header">
+            <h2><i class="bi bi-person-badge"></i> Character</h2>
+        </div>
         <p class="empty-hint">Select a combatant from the initiative list.</p>
     }
     else
     {
         var combatant = State.SelectedCombatant;
+        <div class="panel-header">
+            <h2><i class="bi bi-person-badge"></i> Character</h2>
+            <button class="btn btn-sm" @onclick="() => SaveAsTemplate(combatant)"><i class="bi bi-download"></i> Save as template</button>
+        </div>
+
         <div class="detail-header">
+            <div class="avatar-wrap">
+                <span class="avatar avatar-lg" style="@(HasPortrait(combatant) ? "" : $"background:{AvatarHelper.ColorFor(combatant.Id)}")">
+                    @if (HasPortrait(combatant))
+                    {
+                        <img src="data:image/png;base64,@combatant.PortraitBase64" alt="" />
+                    }
+                    else
+                    {
+                        @AvatarHelper.InitialsFor(combatant.Name)
+                    }
+                </span>
+                <label class="avatar-edit-btn" title="Change portrait">
+                    <i class="bi bi-pencil"></i>
+                    <InputFile OnChange="e => ChangePortrait(combatant, e)" accept="image/*" />
+                </label>
+            </div>
             <div class="detail-title">
                 <input class="name-input-lg" value="@combatant.Name" @oninput="e => RenameCombatant(combatant, e)" />
                 <div class="detail-subtitle">@(combatant.Type == CombatantType.PlayerCharacter ? "Player character" : "Monster")</div>
@@ -72,6 +98,43 @@
 
         <div class="section">
             <div class="section-header">
+                <span class="section-title"><span class="stat-icon"><i class="bi bi-exclamation-triangle-fill"></i></span> Conditions</span>
+                <button class="btn btn-sm" @onclick="() => _showAddCondition = !_showAddCondition"><i class="bi bi-plus-lg"></i> Add condition</button>
+            </div>
+            @if (combatant.Conditions.Count > 0)
+            {
+                <div class="condition-pills">
+                    @foreach (var condition in combatant.Conditions)
+                    {
+                        <span class="condition-pill">
+                            <i class="bi @(ConditionPresets.GetIcon(condition.Name))"></i>
+                            @condition.Name
+                            <button class="icon-btn-ghost" title="Remove condition" @onclick="() => RemoveCondition(combatant, condition.Id)"><i class="bi bi-x"></i></button>
+                        </span>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="empty-hint">No active conditions.</p>
+            }
+            @if (_showAddCondition)
+            {
+                <div class="add-inline-form">
+                    <input @bind="_newConditionName" list="condition-presets" placeholder="e.g. Poisoned" />
+                    <datalist id="condition-presets">
+                        @foreach (var preset in ConditionPresets.Names)
+                        {
+                            <option value="@preset"></option>
+                        }
+                    </datalist>
+                    <button class="btn btn-primary" @onclick="() => AddCondition(combatant)">Add</button>
+                </div>
+            }
+        </div>
+
+        <div class="section">
+            <div class="section-header">
                 <span class="section-title"><span class="stat-icon"><i class="bi bi-dice-6"></i></span> Dice Rolls</span>
                 <button class="btn btn-sm" @onclick="() => _showAddRoll = !_showAddRoll"><i class="bi bi-plus-lg"></i> Add roll</button>
             </div>
@@ -127,6 +190,25 @@
             }
         </div>
 
+        <div class="field-block">
+            <button class="collapsible-header" @onclick="() => _logExpanded = !_logExpanded">
+                <span><i class="bi bi-file-text"></i> Combat Log (@combatant.Name)</span>
+                <i class="bi bi-chevron-down chevron @(_logExpanded ? "open" : "")"></i>
+            </button>
+            @if (_logExpanded)
+            {
+                <ul class="log-list">
+                    @foreach (var entry in State.Current.GetLogForCombatant(combatant.Id).OrderByDescending(e => e.Timestamp))
+                    {
+                        <li>
+                            <span class="log-time">@entry.Timestamp.ToLocalTime().ToString("HH:mm:ss")</span>
+                            @entry.Message
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
         @if (!string.IsNullOrEmpty(_error))
         {
             <div class="error-banner">@_error</div>
@@ -138,17 +220,39 @@
     private string _hpDelta = "";
     private bool _showAddRoll;
     private bool _showAddCounter;
+    private bool _showAddCondition;
+    private bool _logExpanded;
     private string _newRollName = "";
     private string _newRollFormula = "";
     private string _newCounterName = "";
     private int _newCounterMax = 3;
+    private string _newConditionName = "";
     private string? _error;
 
+    private static bool HasPortrait(Combatant c) => !string.IsNullOrEmpty(c.PortraitBase64);
     private static int HpPercent(Combatant c) => c.MaxHp == 0 ? 0 : (int)Math.Round(100.0 * c.CurrentHp / c.MaxHp);
 
     private void RenameCombatant(Combatant combatant, ChangeEventArgs e)
     {
         combatant.Name = e.Value?.ToString() ?? combatant.Name;
+        State.NotifyChanged();
+    }
+
+    private async Task ChangePortrait(Combatant combatant, InputFileChangeEventArgs e)
+    {
+        try
+        {
+            const int maxBytes = 1_500_000;
+            using var stream = e.File.OpenReadStream(maxAllowedSize: maxBytes);
+            using var memory = new MemoryStream();
+            await stream.CopyToAsync(memory);
+            combatant.PortraitBase64 = Convert.ToBase64String(memory.ToArray());
+            _error = null;
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to load image: {ex.Message}";
+        }
         State.NotifyChanged();
     }
 
@@ -268,4 +372,34 @@
         _showAddCounter = false;
         State.NotifyChanged();
     }
+
+    private void RemoveCondition(Combatant combatant, Guid conditionId)
+    {
+        combatant.RemoveCondition(conditionId);
+        State.NotifyChanged();
+    }
+
+    private void AddCondition(Combatant combatant)
+    {
+        if (string.IsNullOrWhiteSpace(_newConditionName))
+        {
+            return;
+        }
+
+        combatant.AddCondition(_newConditionName.Trim());
+        _newConditionName = "";
+        _showAddCondition = false;
+        State.NotifyChanged();
+    }
+
+    private async Task SaveAsTemplate(Combatant combatant)
+    {
+        using var stream = new MemoryStream();
+        await CharacterTemplateService.SaveAsTemplateAsync(combatant, stream);
+        var fileName = $"{Sanitize(combatant.Name)}.turnwise-character.json";
+        await FileDownload.DownloadAsync(fileName, "application/json", stream.ToArray());
+    }
+
+    private static string Sanitize(string name) =>
+        string.Concat(name.Where(c => !Path.GetInvalidFileNameChars().Contains(c))).Replace(' ', '-');
 }

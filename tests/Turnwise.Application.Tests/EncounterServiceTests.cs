@@ -58,6 +58,23 @@ public class EncounterServiceTests
     }
 
     [Fact]
+    public void DuplicateCombatant_InsertsCloneRightAfterOriginal()
+    {
+        var service = MakeService();
+        var encounter = new Encounter();
+        var goblin = new Combatant("Goblin", CombatantType.NonPlayerCharacter, 7);
+        var fighter = new Combatant("Fighter", CombatantType.PlayerCharacter, 20);
+        encounter.AddCombatant(goblin);
+        encounter.AddCombatant(fighter);
+
+        var clone = service.DuplicateCombatant(encounter, goblin.Id);
+
+        Assert.Equal(["Goblin", "Goblin", "Fighter"], encounter.Combatants.Select(c => c.Name));
+        Assert.Equal(clone.Id, encounter.Combatants[1].Id);
+        Assert.NotEqual(goblin.Id, clone.Id);
+    }
+
+    [Fact]
     public void RollNamedRoll_LogsDiceRollEntry()
     {
         var service = MakeService(4, 4);

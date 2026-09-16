@@ -20,4 +20,7 @@ public sealed class EncounterFileDto
     public bool AllowGmBulkInitiativeRoll { get; set; }
     public List<CombatantDto> Combatants { get; set; } = [];
     public List<CombatLogEntryDto> Log { get; set; } = [];
+
+    /// <summary>Shared, deduplicated portrait pool: image id (content hash) -> base64. Combatants reference an entry via <see cref="CombatantDto.PortraitImageId"/> instead of embedding their own copy, since several combatants (e.g. a pack of identical goblins) often share the same art.</summary>
+    public Dictionary<string, string> Images { get; set; } = [];
 }

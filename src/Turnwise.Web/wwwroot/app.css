@@ -223,6 +223,11 @@ button:hover {
     color: var(--tw-danger);
 }
 
+.icon-btn-ghost.neutral:hover {
+    background: var(--tw-accent-soft);
+    color: var(--tw-accent);
+}
+
 .file-button {
     position: relative;
     overflow: hidden;
@@ -302,6 +307,43 @@ button:hover {
     width: 2.4rem;
     height: 2.4rem;
     font-size: 0.85rem;
+}
+
+.avatar-lg {
+    width: 3.4rem;
+    height: 3.4rem;
+    font-size: 1.15rem;
+}
+
+.avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.avatar-edit-btn {
+    position: absolute;
+    right: -0.2rem;
+    bottom: -0.2rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid var(--tw-panel-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--tw-shadow);
+    cursor: pointer;
+    overflow: hidden;
+    font-size: 0.7rem;
+    color: var(--tw-text-dim);
+}
+
+.avatar-edit-btn input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
 }
 
 /* HP bars */
@@ -408,7 +450,7 @@ button:hover {
 
 .main-grid {
     display: grid;
-    grid-template-columns: minmax(280px, 1.15fr) minmax(340px, 1.7fr) minmax(280px, 1.15fr);
+    grid-template-columns: minmax(300px, 0.85fr) minmax(380px, 2fr);
     gap: 1rem;
     flex: 1;
     min-height: 0;
@@ -456,7 +498,7 @@ button:hover {
 
 .combatant-card {
     display: grid;
-    grid-template-columns: auto auto 1fr auto auto;
+    grid-template-columns: auto auto 1fr auto auto auto;
     align-items: center;
     gap: 0.7rem;
     background: var(--tw-panel-bg);
@@ -511,6 +553,27 @@ button:hover {
 .combatant-type {
     font-size: 0.78rem;
     color: var(--tw-text-dim);
+}
+
+.combatant-conditions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--tw-warning);
+}
+
+.condition-overflow {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--tw-text-faint);
+}
+
+.combatant-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.1rem;
 }
 
 .combatant-init {
@@ -757,6 +820,37 @@ button:hover {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+}
+
+.condition-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.condition-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: var(--tw-warning-soft);
+    color: #92660a;
+    border-radius: 999px;
+    padding: 0.25rem 0.4rem 0.25rem 0.6rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.condition-pill .icon-btn-ghost {
+    width: 1.3rem;
+    height: 1.3rem;
+    color: inherit;
+    opacity: 0.7;
+}
+
+.condition-pill .icon-btn-ghost:hover {
+    background: transparent;
+    opacity: 1;
+    color: var(--tw-danger);
 }
 
 .roll-row, .counter-row {

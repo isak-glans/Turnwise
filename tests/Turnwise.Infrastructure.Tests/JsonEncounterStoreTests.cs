@@ -39,6 +39,31 @@ public class JsonEncounterStoreTests
     }
 
     [Fact]
+    public async Task SaveThenLoad_DeduplicatesIdenticalPortraitsAcrossCombatants()
+    {
+        var store = new JsonEncounterStore();
+        var encounter = new Encounter("Goblin Ambush");
+        const string sharedPortrait = "aGVsbG8="; // "hello" - stand-in for real image bytes
+        var goblinA = new Combatant("Goblin A", CombatantType.NonPlayerCharacter, 7) { PortraitBase64 = sharedPortrait };
+        var goblinB = new Combatant("Goblin B", CombatantType.NonPlayerCharacter, 7) { PortraitBase64 = sharedPortrait };
+        encounter.AddCombatant(goblinA);
+        encounter.AddCombatant(goblinB);
+
+        await using var stream = new MemoryStream();
+        await store.SaveAsync(encounter, stream);
+        var json = System.Text.Encoding.UTF8.GetString(stream.ToArray());
+
+        // The shared portrait should appear exactly once in the saved file, not once per combatant.
+        var occurrences = System.Text.RegularExpressions.Regex.Matches(json, System.Text.RegularExpressions.Regex.Escape(sharedPortrait)).Count;
+        Assert.Equal(1, occurrences);
+
+        stream.Position = 0;
+        var loaded = await store.LoadAsync(stream);
+
+        Assert.All(loaded.Combatants, c => Assert.Equal(sharedPortrait, c.PortraitBase64));
+    }
+
+    [Fact]
     public async Task LoadAsync_RejectsFileOlderThanMinSupportedVersion()
     {
         var store = new JsonEncounterStore();

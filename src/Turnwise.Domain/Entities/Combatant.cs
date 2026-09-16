@@ -11,12 +11,12 @@ public sealed class Combatant
 {
     private readonly List<NamedRoll> _namedRolls = [];
     private readonly List<Counter> _counters = [];
+    private readonly List<Condition> _conditions = [];
 
     public Guid Id { get; }
     public string Name { get; set; }
     public CombatantType Type { get; set; }
     public string? PortraitBase64 { get; set; }
-    public string Description { get; set; }
 
     public int MaxHp { get; private set; }
     public bool MaxHpLocked { get; set; }
@@ -28,6 +28,7 @@ public sealed class Combatant
 
     public IReadOnlyList<NamedRoll> NamedRolls => _namedRolls;
     public IReadOnlyList<Counter> Counters => _counters;
+    public IReadOnlyList<Condition> Conditions => _conditions;
 
     public bool IsDefeated => CurrentHp <= 0;
 
@@ -46,14 +47,13 @@ public sealed class Combatant
         Id = id ?? Guid.NewGuid();
         Name = name;
         Type = type;
-        Description = string.Empty;
         MaxHp = maxHp;
         CurrentHp = maxHp;
         MaxHpLocked = true;
         InitiativeLocked = true;
     }
 
-    /// <summary>Reconstructs a combatant with exact saved state (used when loading from a file). Named rolls and counters are added separately.</summary>
+    /// <summary>Reconstructs a combatant with exact saved state (used when loading from a file). Named rolls, counters and conditions are added separately.</summary>
     public static Combatant Restore(
         Guid id,
         string name,
@@ -62,7 +62,6 @@ public sealed class Combatant
         int currentHp,
         bool maxHpLocked,
         string? portraitBase64,
-        string description,
         string? initiativeFormula,
         int? initiative,
         bool initiativeLocked = false)
@@ -71,13 +70,39 @@ public sealed class Combatant
         {
             MaxHpLocked = maxHpLocked,
             PortraitBase64 = portraitBase64,
-            Description = description,
             InitiativeFormula = initiativeFormula,
             InitiativeLocked = initiativeLocked,
             CurrentHp = Math.Clamp(currentHp, 0, maxHp)
         };
         combatant.SetInitiative(initiative);
         return combatant;
+    }
+
+    /// <summary>
+    /// Creates an independent copy with a new identity - same stats, rolls, counters and
+    /// conditions, but a cleared initiative (it hasn't acted yet, just like a freshly
+    /// imported character). Useful for spinning up several identical monsters.
+    /// </summary>
+    public Combatant Duplicate()
+    {
+        var clone = Restore(Guid.NewGuid(), Name, Type, MaxHp, CurrentHp, MaxHpLocked, PortraitBase64, InitiativeFormula, null, InitiativeLocked);
+
+        foreach (var roll in _namedRolls)
+        {
+            clone.AddNamedRoll(roll.Name, roll.Formula);
+        }
+
+        foreach (var counter in _counters)
+        {
+            clone.AddCounter(counter.Name, counter.Current, counter.Max, counter.ShowBar);
+        }
+
+        foreach (var condition in _conditions)
+        {
+            clone.AddCondition(condition.Name);
+        }
+
+        return clone;
     }
 
     /// <summary>Applies a signed HP delta (negative = damage, positive = healing), clamped to [0, MaxHp].</summary>
@@ -122,4 +147,13 @@ public sealed class Combatant
     }
 
     public void RemoveCounter(Guid counterId) => _counters.RemoveAll(c => c.Id == counterId);
+
+    public Condition AddCondition(string name, Guid? id = null)
+    {
+        var condition = new Condition(name, id);
+        _conditions.Add(condition);
+        return condition;
+    }
+
+    public void RemoveCondition(Guid conditionId) => _conditions.RemoveAll(c => c.Id == conditionId);
 }

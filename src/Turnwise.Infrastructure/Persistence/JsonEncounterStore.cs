@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Turnwise.Application.Abstractions;
 using Turnwise.Application.Common;
@@ -26,6 +28,7 @@ public sealed class JsonEncounterStore : IEncounterStore
 
         foreach (var combatantDto in fileDto.Combatants)
         {
+            ResolvePortraitReference(combatantDto, fileDto.Images);
             encounter.AddCombatant(CombatantMapper.ToDomain(combatantDto));
         }
 
@@ -44,6 +47,16 @@ public sealed class JsonEncounterStore : IEncounterStore
 
     public async Task SaveAsync(Encounter encounter, Stream stream, CancellationToken cancellationToken = default)
     {
+        var images = new Dictionary<string, string>();
+        var combatantDtos = encounter.Combatants
+            .Select(CombatantMapper.ToDto)
+            .ToList();
+
+        foreach (var combatantDto in combatantDtos)
+        {
+            ExtractPortraitReference(combatantDto, images);
+        }
+
         var fileDto = new EncounterFileDto
         {
             SchemaVersion = SchemaVersions.CurrentEncounterSchemaVersion,
@@ -52,7 +65,8 @@ public sealed class JsonEncounterStore : IEncounterStore
             Round = encounter.Round,
             ActiveCombatantId = encounter.ActiveCombatantId,
             AllowGmBulkInitiativeRoll = encounter.AllowGmBulkInitiativeRoll,
-            Combatants = encounter.Combatants.Select(CombatantMapper.ToDto).ToList(),
+            Combatants = combatantDtos,
+            Images = images,
             Log = encounter.Log.Select(e => new CombatLogEntryDto
             {
                 Id = e.Id,
@@ -64,5 +78,35 @@ public sealed class JsonEncounterStore : IEncounterStore
         };
 
         await JsonSerializer.SerializeAsync(stream, fileDto, SerializerOptions, cancellationToken);
+    }
+
+    /// <summary>Moves a combatant's inline portrait into the shared, content-hashed image pool - several combatants with the same art (e.g. a pack of goblins) end up pointing at the same entry instead of each embedding their own copy.</summary>
+    private static void ExtractPortraitReference(CombatantDto combatantDto, Dictionary<string, string> images)
+    {
+        if (string.IsNullOrEmpty(combatantDto.PortraitBase64))
+        {
+            return;
+        }
+
+        var imageId = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(combatantDto.PortraitBase64)));
+        images[imageId] = combatantDto.PortraitBase64;
+        combatantDto.PortraitImageId = imageId;
+        combatantDto.PortraitBase64 = null;
+    }
+
+    private static void ResolvePortraitReference(CombatantDto combatantDto, IReadOnlyDictionary<string, string> images)
+    {
+        if (combatantDto.PortraitImageId is not { } imageId)
+        {
+            return;
+        }
+
+        if (!images.TryGetValue(imageId, out var base64))
+        {
+            throw new FormatException($"Encounter file references unknown image '{imageId}'.");
+        }
+
+        combatantDto.PortraitBase64 = base64;
+        combatantDto.PortraitImageId = null;
     }
 }

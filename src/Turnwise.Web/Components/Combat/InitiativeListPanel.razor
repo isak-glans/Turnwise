@@ -50,6 +50,19 @@
                 <span class="combatant-main">
                     <span class="combatant-name">@combatant.Name</span>
                     <span class="combatant-type">@(combatant.Type == CombatantType.PlayerCharacter ? "Player character" : "Monster")</span>
+                    @if (combatant.Conditions.Count > 0)
+                    {
+                        <span class="combatant-conditions">
+                            @foreach (var condition in combatant.Conditions.Take(4))
+                            {
+                                <i class="bi @(ConditionPresets.GetIcon(condition.Name))" title="@condition.Name"></i>
+                            }
+                            @if (combatant.Conditions.Count > 4)
+                            {
+                                <span class="condition-overflow">+@(combatant.Conditions.Count - 4)</span>
+                            }
+                        </span>
+                    }
                 </span>
                 <span class="combatant-init">
                     Init
@@ -61,9 +74,14 @@
                         <span class="hp-bar-fill @HpFillClass(combatant)" style="width:@(HpPercent(combatant))%"></span>
                     </span>
                 </span>
-                <button class="icon-btn-ghost" title="Remove from encounter" @onclick="() => Remove(combatant.Id)" @onclick:stopPropagation>
-                    <i class="bi bi-x-lg"></i>
-                </button>
+                <span class="combatant-actions">
+                    <button class="icon-btn-ghost neutral" title="Duplicate" @onclick="() => Duplicate(combatant.Id)" @onclick:stopPropagation>
+                        <i class="bi bi-copy"></i>
+                    </button>
+                    <button class="icon-btn-ghost" title="Remove from encounter" @onclick="() => Remove(combatant.Id)" @onclick:stopPropagation>
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </span>
             </li>
         }
     </ul>
@@ -180,6 +198,12 @@
         _newMaxHp = 10;
         _showAddForm = false;
         State.SelectCombatant(combatant.Id);
+    }
+
+    private void Duplicate(Guid id)
+    {
+        var clone = EncounterService.DuplicateCombatant(State.Current, id);
+        State.SelectCombatant(clone.Id);
     }
 
     private void Remove(Guid id)

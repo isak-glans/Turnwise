@@ -18,6 +18,32 @@ public sealed class EncounterService(DiceRollingService diceRoller)
     public void RemoveCombatant(Encounter encounter, Guid combatantId) =>
         encounter.RemoveCombatant(combatantId);
 
+    /// <summary>Adds an independent copy of a combatant right after the original in turn order.</summary>
+    public Combatant DuplicateCombatant(Encounter encounter, Guid combatantId)
+    {
+        var combatants = encounter.Combatants;
+        var index = -1;
+        Combatant? original = null;
+        for (var i = 0; i < combatants.Count; i++)
+        {
+            if (combatants[i].Id == combatantId)
+            {
+                index = i;
+                original = combatants[i];
+                break;
+            }
+        }
+
+        if (original is null)
+        {
+            throw new KeyNotFoundException($"Combatant {combatantId} is not part of this encounter.");
+        }
+
+        var clone = original.Duplicate();
+        encounter.AddCombatant(clone, index + 1);
+        return clone;
+    }
+
     public void Reorder(Encounter encounter, int fromIndex, int toIndex) =>
         encounter.Reorder(fromIndex, toIndex);
 

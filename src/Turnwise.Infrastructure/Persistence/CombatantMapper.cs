@@ -13,7 +13,6 @@ internal static class CombatantMapper
         Name = combatant.Name,
         Type = combatant.Type.ToString(),
         PortraitBase64 = combatant.PortraitBase64,
-        Description = combatant.Description,
         MaxHp = combatant.MaxHp,
         MaxHpLocked = combatant.MaxHpLocked,
         CurrentHp = combatant.CurrentHp,
@@ -25,6 +24,9 @@ internal static class CombatantMapper
             .ToList(),
         Counters = combatant.Counters
             .Select(c => new CounterDto { Id = c.Id, Name = c.Name, Current = c.Current, Max = c.Max, ShowBar = c.ShowBar })
+            .ToList(),
+        Conditions = combatant.Conditions
+            .Select(c => new ConditionDto { Id = c.Id, Name = c.Name })
             .ToList()
     };
 
@@ -43,7 +45,6 @@ internal static class CombatantMapper
             dto.CurrentHp,
             dto.MaxHpLocked,
             dto.PortraitBase64,
-            dto.Description,
             dto.InitiativeFormula,
             dto.Initiative,
             dto.InitiativeLocked);
@@ -56,6 +57,11 @@ internal static class CombatantMapper
         foreach (var counter in dto.Counters)
         {
             combatant.AddCounter(counter.Name, counter.Current, counter.Max, counter.ShowBar, counter.Id);
+        }
+
+        foreach (var condition in dto.Conditions)
+        {
+            combatant.AddCondition(condition.Name, condition.Id);
         }
 
         return combatant;
