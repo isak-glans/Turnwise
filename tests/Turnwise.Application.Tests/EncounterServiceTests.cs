@@ -75,6 +75,91 @@ public class EncounterServiceTests
     }
 
     [Fact]
+    public void ApplyHpDeltaToMany_AppliesSameDeltaToEveryCombatant()
+    {
+        var service = MakeService();
+        var encounter = new Encounter();
+        var a = new Combatant("A", CombatantType.NonPlayerCharacter, 20);
+        var b = new Combatant("B", CombatantType.NonPlayerCharacter, 10);
+        encounter.AddCombatant(a);
+        encounter.AddCombatant(b);
+
+        service.ApplyHpDeltaToMany(encounter, [a.Id, b.Id], -6);
+
+        Assert.Equal(14, a.CurrentHp);
+        Assert.Equal(4, b.CurrentHp);
+        Assert.Equal(2, encounter.Log.Count);
+    }
+
+    [Fact]
+    public void ApplyRolledDamageToMany_WithSharedRoll_AppliesSameTotalToEveryCombatant()
+    {
+        var service = MakeService(5); // 1d6 -> 5, reused for both since only one roll should be consumed
+        var encounter = new Encounter();
+        var a = new Combatant("A", CombatantType.NonPlayerCharacter, 20);
+        var b = new Combatant("B", CombatantType.NonPlayerCharacter, 20);
+        encounter.AddCombatant(a);
+        encounter.AddCombatant(b);
+        var formula = Domain.ValueObjects.DiceFormula.Parse("1d6");
+
+        service.ApplyRolledDamageToMany(encounter, [a.Id, b.Id], formula, sharedRoll: true);
+
+        Assert.Equal(15, a.CurrentHp);
+        Assert.Equal(15, b.CurrentHp);
+    }
+
+    [Fact]
+    public void ApplyRolledDamageToMany_WithIndividualRolls_RollsSeparatelyPerCombatant()
+    {
+        var service = MakeService(2, 6); // first combatant rolls 2, second rolls 6
+        var encounter = new Encounter();
+        var a = new Combatant("A", CombatantType.NonPlayerCharacter, 20);
+        var b = new Combatant("B", CombatantType.NonPlayerCharacter, 20);
+        encounter.AddCombatant(a);
+        encounter.AddCombatant(b);
+        var formula = Domain.ValueObjects.DiceFormula.Parse("1d6");
+
+        service.ApplyRolledDamageToMany(encounter, [a.Id, b.Id], formula, sharedRoll: false);
+
+        Assert.Equal(18, a.CurrentHp);
+        Assert.Equal(14, b.CurrentHp);
+    }
+
+    [Fact]
+    public void AddConditionToMany_AddsConditionToEveryCombatant()
+    {
+        var service = MakeService();
+        var encounter = new Encounter();
+        var a = new Combatant("A", CombatantType.NonPlayerCharacter, 20);
+        var b = new Combatant("B", CombatantType.NonPlayerCharacter, 20);
+        encounter.AddCombatant(a);
+        encounter.AddCombatant(b);
+
+        service.AddConditionToMany(encounter, [a.Id, b.Id], "Prone");
+
+        Assert.Equal("Prone", Assert.Single(a.Conditions).Name);
+        Assert.Equal("Prone", Assert.Single(b.Conditions).Name);
+    }
+
+    [Fact]
+    public void RollInitiativeForMany_SkipsCombatantsWithoutAFormula()
+    {
+        var service = MakeService(10);
+        var encounter = new Encounter();
+        var withFormula = new Combatant("A", CombatantType.PlayerCharacter, 20) { InitiativeFormula = "1d20" };
+        var withoutFormula = new Combatant("B", CombatantType.NonPlayerCharacter, 20);
+        encounter.AddCombatant(withFormula);
+        encounter.AddCombatant(withoutFormula);
+
+        var results = service.RollInitiativeForMany(encounter, [withFormula.Id, withoutFormula.Id]);
+
+        Assert.Single(results);
+        Assert.True(results.ContainsKey(withFormula.Id));
+        Assert.Equal(10, withFormula.Initiative);
+        Assert.Null(withoutFormula.Initiative);
+    }
+
+    [Fact]
     public void RollNamedRoll_LogsDiceRollEntry()
     {
         var service = MakeService(4, 4);

@@ -63,6 +63,52 @@ public sealed class EncounterService(DiceRollingService diceRoller)
         return applied;
     }
 
+    /// <summary>Applies the same flat HP delta (negative = damage, positive = healing) to every given combatant.</summary>
+    public IReadOnlyDictionary<Guid, int> ApplyHpDeltaToMany(Encounter encounter, IEnumerable<Guid> combatantIds, int delta)
+    {
+        var results = new Dictionary<Guid, int>();
+        foreach (var id in combatantIds.ToList())
+        {
+            results[id] = ApplyHpDelta(encounter, id, delta);
+        }
+
+        return results;
+    }
+
+    /// <summary>
+    /// Rolls damage and applies it to every given combatant. With <paramref name="sharedRoll"/> the
+    /// dice are rolled once and every combatant takes that same amount; otherwise each combatant
+    /// takes an independent roll of the same formula.
+    /// </summary>
+    public IReadOnlyDictionary<Guid, DiceRollResult> ApplyRolledDamageToMany(
+        Encounter encounter, IEnumerable<Guid> combatantIds, DiceFormula formula, bool sharedRoll)
+    {
+        var results = new Dictionary<Guid, DiceRollResult>();
+        var shared = sharedRoll ? diceRoller.Roll(formula) : null;
+
+        foreach (var id in combatantIds.ToList())
+        {
+            var combatant = GetCombatant(encounter, id);
+            var roll = shared ?? diceRoller.Roll(formula);
+            results[id] = roll;
+
+            combatant.ApplyHpDelta(-roll.Total);
+            var message = $"{combatant.Name}: {roll} damage -> {combatant.CurrentHp}/{combatant.MaxHp}";
+            encounter.AddLogEntry(new CombatLogEntry(CombatLogEntryType.HpChange, message, combatant.Id));
+        }
+
+        return results;
+    }
+
+    /// <summary>Adds the same condition to every given combatant.</summary>
+    public void AddConditionToMany(Encounter encounter, IEnumerable<Guid> combatantIds, string conditionName)
+    {
+        foreach (var id in combatantIds.ToList())
+        {
+            GetCombatant(encounter, id).AddCondition(conditionName);
+        }
+    }
+
     public DiceRollResult RollInitiative(Encounter encounter, Guid combatantId)
     {
         var combatant = GetCombatant(encounter, combatantId);
@@ -77,13 +123,23 @@ public sealed class EncounterService(DiceRollingService diceRoller)
         return result;
     }
 
-    /// <summary>Bulk-rolls initiative for every combatant that has an initiative formula set.</summary>
-    public IReadOnlyDictionary<Guid, DiceRollResult> RollInitiativeForAll(Encounter encounter)
+    /// <summary>Bulk-rolls initiative for every combatant in the encounter that has an initiative formula set.</summary>
+    public IReadOnlyDictionary<Guid, DiceRollResult> RollInitiativeForAll(Encounter encounter) =>
+        RollInitiativeForMany(encounter, encounter.Combatants.Select(c => c.Id));
+
+    /// <summary>Bulk-rolls initiative for the given combatants (each gets its own independent roll). Combatants with no formula set are skipped.</summary>
+    public IReadOnlyDictionary<Guid, DiceRollResult> RollInitiativeForMany(Encounter encounter, IEnumerable<Guid> combatantIds)
     {
         var results = new Dictionary<Guid, DiceRollResult>();
-        foreach (var combatant in encounter.Combatants.Where(c => !string.IsNullOrWhiteSpace(c.InitiativeFormula)))
+        foreach (var id in combatantIds.ToList())
         {
-            results[combatant.Id] = RollInitiative(encounter, combatant.Id);
+            var combatant = GetCombatant(encounter, id);
+            if (string.IsNullOrWhiteSpace(combatant.InitiativeFormula))
+            {
+                continue;
+            }
+
+            results[id] = RollInitiative(encounter, id);
         }
 
         return results;

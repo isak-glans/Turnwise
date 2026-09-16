@@ -36,6 +36,9 @@
                 @ondragover:preventDefault
                 @ondrop="() => Drop(index)"
                 @onclick="() => State.SelectCombatant(combatant.Id)">
+                <input type="checkbox" class="bulk-select-checkbox" title="Select for bulk action"
+                       checked="@State.IsBulkSelected(combatant.Id)"
+                       @onclick="() => State.ToggleBulkSelection(combatant.Id)" @onclick:stopPropagation />
                 <span class="turn-badge @(isActive ? "is-active" : "")">@(isActive ? "▶" : (index + 1).ToString())</span>
                 <span class="avatar avatar-sm" style="@(HasPortrait(combatant) ? "" : $"background:{AvatarHelper.ColorFor(combatant.Id)}")">
                     @if (HasPortrait(combatant))
@@ -213,6 +216,7 @@
             State.SelectCombatant(null);
         }
         EncounterService.RemoveCombatant(State.Current, id);
+        State.RemoveFromBulkSelection(id);
         State.NotifyChanged();
     }
 

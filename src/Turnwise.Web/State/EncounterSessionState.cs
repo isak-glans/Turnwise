@@ -9,8 +9,13 @@ namespace Turnwise.Web.State;
 /// </summary>
 public sealed class EncounterSessionState
 {
+    private readonly HashSet<Guid> _bulkSelectedIds = [];
+
     public Encounter Current { get; private set; } = new();
     public Guid? SelectedCombatantId { get; private set; }
+
+    /// <summary>Combatants checked for a bulk action (damage, condition, initiative roll) - independent of <see cref="SelectedCombatantId"/>.</summary>
+    public IReadOnlySet<Guid> BulkSelectedIds => _bulkSelectedIds;
 
     public event Action? Changed;
 
@@ -18,6 +23,7 @@ public sealed class EncounterSessionState
     {
         Current = encounter;
         SelectedCombatantId = Current.Combatants.FirstOrDefault()?.Id;
+        _bulkSelectedIds.Clear();
         NotifyChanged();
     }
 
@@ -31,6 +37,32 @@ public sealed class EncounterSessionState
 
     public Combatant? SelectedCombatant =>
         Current.Combatants.FirstOrDefault(c => c.Id == SelectedCombatantId);
+
+    public bool IsBulkSelected(Guid combatantId) => _bulkSelectedIds.Contains(combatantId);
+
+    public void ToggleBulkSelection(Guid combatantId)
+    {
+        if (!_bulkSelectedIds.Remove(combatantId))
+        {
+            _bulkSelectedIds.Add(combatantId);
+        }
+
+        NotifyChanged();
+    }
+
+    public void ClearBulkSelection()
+    {
+        _bulkSelectedIds.Clear();
+        NotifyChanged();
+    }
+
+    public void RemoveFromBulkSelection(Guid combatantId)
+    {
+        if (_bulkSelectedIds.Remove(combatantId))
+        {
+            NotifyChanged();
+        }
+    }
 
     public void NotifyChanged() => Changed?.Invoke();
 }

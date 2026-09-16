@@ -446,6 +446,57 @@ button:hover {
     margin-left: auto;
 }
 
+/* Bulk actions panel */
+
+.bulk-panel {
+    padding: 0.75rem 1.1rem;
+    border-color: var(--tw-accent);
+    background: var(--tw-accent-soft);
+}
+
+.bulk-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 700;
+    color: var(--tw-accent);
+    margin-bottom: 0.6rem;
+}
+
+.bulk-panel-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.bulk-action-group {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    background: var(--tw-panel-bg);
+    border-radius: var(--tw-radius-md);
+    padding: 0.5rem 0.6rem;
+}
+
+.bulk-action-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    min-width: 6.5rem;
+}
+
+.bulk-action-sep {
+    color: var(--tw-text-faint);
+    font-size: 0.8rem;
+}
+
+.bulk-narrow-input {
+    width: 6rem;
+}
+
 /* Main grid */
 
 .main-grid {
@@ -498,7 +549,7 @@ button:hover {
 
 .combatant-card {
     display: grid;
-    grid-template-columns: auto auto 1fr auto auto auto;
+    grid-template-columns: auto auto auto 1fr auto auto auto;
     align-items: center;
     gap: 0.7rem;
     background: var(--tw-panel-bg);
@@ -519,6 +570,14 @@ button:hover {
 
 .combatant-card.active {
     box-shadow: 0 0 0 2px var(--tw-accent);
+}
+
+.bulk-select-checkbox {
+    width: 1.05rem;
+    height: 1.05rem;
+    margin: 0;
+    accent-color: var(--tw-accent);
+    cursor: pointer;
 }
 
 .turn-badge {
