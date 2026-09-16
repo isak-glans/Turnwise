@@ -10,16 +10,6 @@
     {
         var combatant = State.SelectedCombatant;
         <div class="detail-header">
-            <span class="avatar avatar-lg" style="@(HasPortrait(combatant) ? "" : $"background:{AvatarHelper.ColorFor(combatant.Id)}")">
-                @if (HasPortrait(combatant))
-                {
-                    <img src="data:image/png;base64,@combatant.PortraitBase64" alt="" />
-                }
-                else
-                {
-                    @AvatarHelper.InitialsFor(combatant.Name)
-                }
-            </span>
             <div class="detail-title">
                 <input class="name-input-lg" value="@combatant.Name" @oninput="e => RenameCombatant(combatant, e)" />
                 <div class="detail-subtitle">@(combatant.Type == CombatantType.PlayerCharacter ? "Player character" : "Monster")</div>
@@ -31,37 +21,23 @@
         </div>
 
         <div class="detail-grid">
-            <div class="portrait-box">
-                @if (HasPortrait(combatant))
-                {
-                    <img src="data:image/png;base64,@combatant.PortraitBase64" alt="" />
-                }
-                else
-                {
-                    <span class="avatar" style="background:@AvatarHelper.ColorFor(combatant.Id)">@AvatarHelper.InitialsFor(combatant.Name)</span>
-                }
-                <label class="portrait-edit-btn" title="Change image">
-                    <i class="bi bi-pencil"></i>
-                    <InputFile OnChange="e => ChangePortrait(combatant, e)" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;" />
-                </label>
-            </div>
-
             <div class="stat-card">
                 <div class="stat-card-header">
                     <span class="stat-icon icon-danger"><i class="bi bi-heart-fill"></i></span> HP
                 </div>
-                <div class="stat-big">@combatant.CurrentHp / @combatant.MaxHp</div>
+                <div class="stat-big-row">
+                    <span class="stat-big">@combatant.CurrentHp</span>
+                    <span class="stat-big-sep">/</span>
+                    <input type="number" class="stat-big-input" value="@combatant.MaxHp" disabled="@combatant.MaxHpLocked"
+                           title="Max HP" @onchange="e => SetMaxHp(combatant, e)" />
+                    <button class="icon-btn @(combatant.MaxHpLocked ? "active" : "")"
+                            title="@(combatant.MaxHpLocked ? "Unlock max HP" : "Lock max HP")"
+                            @onclick="() => ToggleLock(combatant)">
+                        <i class="bi @(combatant.MaxHpLocked ? "bi-lock-fill" : "bi-unlock")"></i>
+                    </button>
+                </div>
                 <div class="hp-bar large">
                     <div class="hp-bar-fill" style="width:@(HpPercent(combatant))%"></div>
-                </div>
-
-                <span class="field-label">Max HP</span>
-                <div class="field-row">
-                    <input type="number" value="@combatant.MaxHp" disabled="@combatant.MaxHpLocked" @onchange="e => SetMaxHp(combatant, e)" />
-                    <button class="btn lock-toggle @(combatant.MaxHpLocked ? "locked" : "")" @onclick="() => ToggleLock(combatant)">
-                        <i class="bi @(combatant.MaxHpLocked ? "bi-lock-fill" : "bi-unlock")"></i>
-                        @(combatant.MaxHpLocked ? "Locked" : "Unlocked")
-                    </button>
                 </div>
 
                 <span class="field-label">Change HP</span>
@@ -163,7 +139,6 @@
     private int _newCounterMax = 3;
     private string? _error;
 
-    private static bool HasPortrait(Combatant c) => !string.IsNullOrEmpty(c.PortraitBase64);
     private static int HpPercent(Combatant c) => c.MaxHp == 0 ? 0 : (int)Math.Round(100.0 * c.CurrentHp / c.MaxHp);
 
     private void RenameCombatant(Combatant combatant, ChangeEventArgs e)
@@ -280,24 +255,6 @@
         _newCounterName = "";
         _newCounterMax = 3;
         _showAddCounter = false;
-        State.NotifyChanged();
-    }
-
-    private async Task ChangePortrait(Combatant combatant, InputFileChangeEventArgs e)
-    {
-        try
-        {
-            const int maxBytes = 1_500_000;
-            using var stream = e.File.OpenReadStream(maxAllowedSize: maxBytes);
-            using var memory = new MemoryStream();
-            await stream.CopyToAsync(memory);
-            combatant.PortraitBase64 = Convert.ToBase64String(memory.ToArray());
-            _error = null;
-        }
-        catch (Exception ex)
-        {
-            _error = $"Failed to load image: {ex.Message}";
-        }
         State.NotifyChanged();
     }
 }

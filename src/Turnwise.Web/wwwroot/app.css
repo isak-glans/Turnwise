@@ -304,12 +304,6 @@ button:hover {
     font-size: 0.85rem;
 }
 
-.avatar-lg {
-    width: 3.2rem;
-    height: 3.2rem;
-    font-size: 1.1rem;
-}
-
 /* HP bars */
 
 .hp-bar {
@@ -613,65 +607,10 @@ button:hover {
     margin-bottom: 1rem;
 }
 
-@container (min-width: 480px) {
+@container (min-width: 420px) {
     .detail-grid {
-        grid-template-columns: minmax(110px, 0.8fr) 1fr;
+        grid-template-columns: 1fr 1fr;
     }
-
-    .portrait-box {
-        grid-row: span 2;
-    }
-}
-
-@container (min-width: 760px) {
-    .detail-grid {
-        grid-template-columns: minmax(120px, 0.7fr) 1.3fr 1.3fr;
-    }
-
-    .portrait-box {
-        grid-row: auto;
-    }
-}
-
-.portrait-box {
-    position: relative;
-    border-radius: var(--tw-radius-md);
-    overflow: hidden;
-    background: var(--tw-inset-bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 120px;
-    border: 1px solid var(--tw-panel-border);
-}
-
-.portrait-box img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.portrait-box .avatar {
-    width: 4.5rem;
-    height: 4.5rem;
-    font-size: 1.4rem;
-}
-
-.portrait-edit-btn {
-    position: absolute;
-    right: 0.4rem;
-    bottom: 0.4rem;
-    width: 1.9rem;
-    height: 1.9rem;
-    border-radius: 999px;
-    background: #fff;
-    border: 1px solid var(--tw-panel-border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: var(--tw-shadow);
-    cursor: pointer;
-    overflow: hidden;
 }
 
 .stat-card {
@@ -715,6 +654,50 @@ button:hover {
     margin-bottom: 0.2rem;
 }
 
+.stat-big-row {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-bottom: 0.2rem;
+}
+
+.stat-big-row .stat-big {
+    margin-bottom: 0;
+}
+
+.stat-big-sep {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--tw-text-faint);
+}
+
+.stat-big-input {
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: inherit;
+    color: var(--tw-text);
+    border: none;
+    background: transparent;
+    padding: 0.1rem 0.2rem;
+    width: 3.2rem;
+}
+
+.stat-big-input:focus {
+    box-shadow: none;
+    background: var(--tw-inset-bg);
+    border-radius: var(--tw-radius-sm);
+}
+
+.stat-big-input:disabled {
+    color: var(--tw-text-faint);
+}
+
+.stat-big-row .icon-btn {
+    margin-left: auto;
+    width: 1.9rem;
+    height: 1.9rem;
+}
+
 .field-label {
     display: block;
     font-size: 0.78rem;
@@ -731,19 +714,6 @@ button:hover {
 .field-row input {
     flex: 1;
     min-width: 0;
-}
-
-.lock-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    white-space: nowrap;
-}
-
-.lock-toggle.locked {
-    background: var(--tw-success-soft);
-    border-color: var(--tw-success);
-    color: var(--tw-success);
 }
 
 .hint-text {
