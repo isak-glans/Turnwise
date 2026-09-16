@@ -8,7 +8,7 @@ public class EncounterTests
 {
     private static Combatant MakeCombatant(string name, int? initiative = null)
     {
-        var combatant = new Combatant(name, CombatantType.NonPlayerCharacter, 10);
+        var combatant = new Combatant(name, 10);
         if (initiative is { } value)
         {
             combatant.SetInitiative(value);

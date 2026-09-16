@@ -27,7 +27,6 @@ public sealed class CombatantDto
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
-    public string Type { get; set; } = string.Empty;
 
     /// <summary>Inline portrait, used by character template files. Encounter files use <see cref="PortraitImageId"/> instead (see <see cref="EncounterFileDto.Images"/>).</summary>
     public string? PortraitBase64 { get; set; }

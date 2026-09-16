@@ -38,7 +38,6 @@
             </div>
             <div class="detail-title">
                 <input class="name-input-lg" value="@combatant.Name" @oninput="e => RenameCombatant(combatant, e)" />
-                <div class="detail-subtitle">@(combatant.Type == CombatantType.PlayerCharacter ? "Player character" : "Monster")</div>
             </div>
             @if (combatant.Id == State.Current.ActiveCombatantId)
             {
@@ -120,16 +119,22 @@
             }
             @if (_showAddCondition)
             {
-                <div class="add-inline-form">
-                    <input @bind="_newConditionName" list="condition-presets" placeholder="e.g. Poisoned" />
-                    <datalist id="condition-presets">
-                        @foreach (var preset in ConditionPresets.Names)
+                var available = AvailablePresets(combatant);
+                @if (available.Count > 0)
+                {
+                    <div class="condition-picker">
+                        @foreach (var preset in available)
                         {
-                            <option value="@preset"></option>
+                            <button class="condition-picker-item" @onclick="() => AddCondition(combatant, preset)">
+                                <i class="bi @(ConditionPresets.GetIcon(preset))"></i> @preset
+                            </button>
                         }
-                    </datalist>
-                    <button class="btn btn-primary" @onclick="() => AddCondition(combatant)">Add</button>
-                </div>
+                    </div>
+                }
+                else
+                {
+                    <p class="empty-hint">All conditions already added.</p>
+                }
             }
         </div>
 
@@ -183,7 +188,7 @@
             @if (_showAddCounter)
             {
                 <div class="add-inline-form">
-                    <input @bind="_newCounterName" placeholder="Name" />
+                    <input @bind="_newCounterName" placeholder="e.g. AC, Ammo, Ki" />
                     <input type="number" @bind="_newCounterMax" placeholder="Max" />
                     <button class="btn btn-primary" @onclick="() => AddCounter(combatant)">Add</button>
                 </div>
@@ -226,7 +231,6 @@
     private string _newRollFormula = "";
     private string _newCounterName = "";
     private int _newCounterMax = 3;
-    private string _newConditionName = "";
     private string? _error;
 
     private static bool HasPortrait(Combatant c) => !string.IsNullOrEmpty(c.PortraitBase64);
@@ -379,16 +383,15 @@
         State.NotifyChanged();
     }
 
-    private void AddCondition(Combatant combatant)
+    private static List<string> AvailablePresets(Combatant combatant)
     {
-        if (string.IsNullOrWhiteSpace(_newConditionName))
-        {
-            return;
-        }
+        var existing = combatant.Conditions.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return ConditionPresets.Names.Where(n => !existing.Contains(n)).ToList();
+    }
 
-        combatant.AddCondition(_newConditionName.Trim());
-        _newConditionName = "";
-        _showAddCondition = false;
+    private void AddCondition(Combatant combatant, string name)
+    {
+        combatant.AddCondition(name);
         State.NotifyChanged();
     }
 

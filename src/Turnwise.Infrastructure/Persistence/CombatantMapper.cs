@@ -1,5 +1,4 @@
 using Turnwise.Domain.Entities;
-using Turnwise.Domain.Enums;
 using Turnwise.Domain.ValueObjects;
 using Turnwise.Infrastructure.Persistence.Dtos;
 
@@ -11,7 +10,6 @@ internal static class CombatantMapper
     {
         Id = combatant.Id,
         Name = combatant.Name,
-        Type = combatant.Type.ToString(),
         PortraitBase64 = combatant.PortraitBase64,
         MaxHp = combatant.MaxHp,
         MaxHpLocked = combatant.MaxHpLocked,
@@ -32,15 +30,9 @@ internal static class CombatantMapper
 
     public static Combatant ToDomain(CombatantDto dto)
     {
-        if (!Enum.TryParse<CombatantType>(dto.Type, out var type))
-        {
-            throw new FormatException($"Unknown combatant type '{dto.Type}'.");
-        }
-
         var combatant = Combatant.Restore(
             dto.Id,
             dto.Name,
-            type,
             dto.MaxHp,
             dto.CurrentHp,
             dto.MaxHpLocked,

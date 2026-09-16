@@ -1,5 +1,4 @@
 using Turnwise.Domain.Entities;
-using Turnwise.Domain.Enums;
 using Turnwise.Infrastructure.Persistence;
 using Xunit;
 
@@ -11,7 +10,7 @@ public class JsonCharacterTemplateStoreTests
     public async Task SaveThenLoad_RoundTripsCombatantState()
     {
         var store = new JsonCharacterTemplateStore();
-        var goblin = new Combatant("Goblin", CombatantType.NonPlayerCharacter, 7)
+        var goblin = new Combatant("Goblin", 7)
         {
             InitiativeFormula = "1d20+2"
         };
@@ -24,7 +23,6 @@ public class JsonCharacterTemplateStoreTests
         var loaded = await store.LoadAsync(stream);
 
         Assert.Equal(goblin.Name, loaded.Name);
-        Assert.Equal(goblin.Type, loaded.Type);
         Assert.Equal(goblin.MaxHp, loaded.MaxHp);
         Assert.Single(loaded.NamedRolls);
         Assert.Equal("Scimitar", loaded.NamedRolls[0].Name);

@@ -26,15 +26,21 @@
 
             <div class="bulk-action-group">
                 <span class="bulk-action-label"><i class="bi bi-exclamation-triangle-fill"></i> Condition</span>
-                <input class="bulk-narrow-input" @bind="_conditionName" list="bulk-condition-presets" placeholder="e.g. Prone" />
-                <datalist id="bulk-condition-presets">
+                <button class="btn btn-sm" @onclick="() => _showConditionPicker = !_showConditionPicker">
+                    <i class="bi bi-plus-lg"></i> Add to selected
+                </button>
+            </div>
+            @if (_showConditionPicker)
+            {
+                <div class="condition-picker">
                     @foreach (var preset in ConditionPresets.Names)
                     {
-                        <option value="@preset"></option>
+                        <button class="condition-picker-item" @onclick="() => AddCondition(preset)">
+                            <i class="bi @(ConditionPresets.GetIcon(preset))"></i> @preset
+                        </button>
                     }
-                </datalist>
-                <button class="btn btn-sm" @onclick="AddCondition"><i class="bi bi-plus-lg"></i> Add to selected</button>
-            </div>
+                </div>
+            }
 
             <div class="bulk-action-group">
                 <span class="bulk-action-label"><i class="bi bi-dice-5-fill"></i> Initiative</span>
@@ -54,7 +60,7 @@
 @code {
     private string _flatDelta = "";
     private string _damageFormula = "2d6";
-    private string _conditionName = "";
+    private bool _showConditionPicker;
     private string? _error;
 
     private void ApplyFlat()
@@ -86,15 +92,9 @@
         State.NotifyChanged();
     }
 
-    private void AddCondition()
+    private void AddCondition(string name)
     {
-        if (string.IsNullOrWhiteSpace(_conditionName))
-        {
-            return;
-        }
-
-        EncounterService.AddConditionToMany(State.Current, State.BulkSelectedIds, _conditionName.Trim());
-        _conditionName = "";
+        EncounterService.AddConditionToMany(State.Current, State.BulkSelectedIds, name);
         State.NotifyChanged();
     }
 

@@ -30,7 +30,7 @@
             var index = i;
             var combatant = State.Current.Combatants[index];
             var isActive = combatant.Id == State.Current.ActiveCombatantId;
-            <li class="combatant-card @(isActive ? "active" : "") @(combatant.Id == State.SelectedCombatantId ? "selected" : "")"
+            <li class="combatant-card @(isActive ? "active" : "") @(combatant.Id == State.SelectedCombatantId ? "selected" : "") @(combatant.IsDefeated ? "defeated" : "")"
                 draggable="true"
                 @ondragstart="() => _draggedIndex = index"
                 @ondragover:preventDefault
@@ -51,8 +51,7 @@
                     }
                 </span>
                 <span class="combatant-main">
-                    <span class="combatant-name">@combatant.Name</span>
-                    <span class="combatant-type">@(combatant.Type == CombatantType.PlayerCharacter ? "Player character" : "Monster")</span>
+                    <span class="combatant-name" title="@combatant.Name">@combatant.Name</span>
                     @if (combatant.Conditions.Count > 0)
                     {
                         <span class="combatant-conditions">
@@ -67,8 +66,7 @@
                         </span>
                     }
                 </span>
-                <span class="combatant-init">
-                    Init
+                <span class="combatant-init" title="Initiative">
                     <span class="value">@(combatant.Initiative?.ToString() ?? "—")</span>
                 </span>
                 <span class="combatant-hp">
@@ -94,10 +92,6 @@
         <div class="add-combatant-form">
             <div class="add-combatant-row">
                 <input @bind="_newName" placeholder="Name" />
-                <select @bind="_newType">
-                    <option value="@CombatantType.PlayerCharacter">PC</option>
-                    <option value="@CombatantType.NonPlayerCharacter">NPC</option>
-                </select>
                 <input type="number" @bind="_newMaxHp" min="0" placeholder="Max HP" />
             </div>
             <div class="add-combatant-row">
@@ -127,7 +121,6 @@
     private int? _draggedIndex;
     private bool _showAddForm;
     private string _newName = "";
-    private CombatantType _newType = CombatantType.NonPlayerCharacter;
     private int _newMaxHp = 10;
     private string? _error;
 
@@ -195,7 +188,7 @@
             return;
         }
 
-        var combatant = new Combatant(_newName, _newType, Math.Max(0, _newMaxHp));
+        var combatant = new Combatant(_newName, Math.Max(0, _newMaxHp));
         EncounterService.AddCombatant(State.Current, combatant);
         _newName = "";
         _newMaxHp = 10;

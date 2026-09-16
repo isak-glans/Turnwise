@@ -13,7 +13,7 @@ public class JsonEncounterStoreTests
     {
         var store = new JsonEncounterStore();
         var encounter = new Encounter("Goblin Ambush");
-        var fighter = new Combatant("Fighter", CombatantType.PlayerCharacter, 30) { InitiativeFormula = "1d20+2" };
+        var fighter = new Combatant("Fighter", 30) { InitiativeFormula = "1d20+2" };
         fighter.SetInitiative(18);
         fighter.AddCounter("Superiority Dice", 3, 4);
         fighter.AddNamedRoll("Longsword hit", Domain.ValueObjects.DiceFormula.Parse("1d20+4"));
@@ -44,8 +44,8 @@ public class JsonEncounterStoreTests
         var store = new JsonEncounterStore();
         var encounter = new Encounter("Goblin Ambush");
         const string sharedPortrait = "aGVsbG8="; // "hello" - stand-in for real image bytes
-        var goblinA = new Combatant("Goblin A", CombatantType.NonPlayerCharacter, 7) { PortraitBase64 = sharedPortrait };
-        var goblinB = new Combatant("Goblin B", CombatantType.NonPlayerCharacter, 7) { PortraitBase64 = sharedPortrait };
+        var goblinA = new Combatant("Goblin A", 7) { PortraitBase64 = sharedPortrait };
+        var goblinB = new Combatant("Goblin B", 7) { PortraitBase64 = sharedPortrait };
         encounter.AddCombatant(goblinA);
         encounter.AddCombatant(goblinB);
 

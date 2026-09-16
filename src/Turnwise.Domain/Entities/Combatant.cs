@@ -1,4 +1,3 @@
-using Turnwise.Domain.Enums;
 using Turnwise.Domain.ValueObjects;
 
 namespace Turnwise.Domain.Entities;
@@ -15,7 +14,6 @@ public sealed class Combatant
 
     public Guid Id { get; }
     public string Name { get; set; }
-    public CombatantType Type { get; set; }
     public string? PortraitBase64 { get; set; }
 
     public int MaxHp { get; private set; }
@@ -32,7 +30,7 @@ public sealed class Combatant
 
     public bool IsDefeated => CurrentHp <= 0;
 
-    public Combatant(string name, CombatantType type, int maxHp, Guid? id = null)
+    public Combatant(string name, int maxHp, Guid? id = null)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -46,7 +44,6 @@ public sealed class Combatant
 
         Id = id ?? Guid.NewGuid();
         Name = name;
-        Type = type;
         MaxHp = maxHp;
         CurrentHp = maxHp;
         MaxHpLocked = true;
@@ -57,7 +54,6 @@ public sealed class Combatant
     public static Combatant Restore(
         Guid id,
         string name,
-        CombatantType type,
         int maxHp,
         int currentHp,
         bool maxHpLocked,
@@ -66,7 +62,7 @@ public sealed class Combatant
         int? initiative,
         bool initiativeLocked = false)
     {
-        var combatant = new Combatant(name, type, maxHp, id)
+        var combatant = new Combatant(name, maxHp, id)
         {
             MaxHpLocked = maxHpLocked,
             PortraitBase64 = portraitBase64,
@@ -85,7 +81,7 @@ public sealed class Combatant
     /// </summary>
     public Combatant Duplicate()
     {
-        var clone = Restore(Guid.NewGuid(), Name, Type, MaxHp, CurrentHp, MaxHpLocked, PortraitBase64, InitiativeFormula, null, InitiativeLocked);
+        var clone = Restore(Guid.NewGuid(), Name, MaxHp, CurrentHp, MaxHpLocked, PortraitBase64, InitiativeFormula, null, InitiativeLocked);
 
         foreach (var roll in _namedRolls)
         {

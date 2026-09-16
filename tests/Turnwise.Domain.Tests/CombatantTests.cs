@@ -9,7 +9,7 @@ public class CombatantTests
     [Fact]
     public void ApplyHpDelta_ClampsAtZero()
     {
-        var combatant = new Combatant("Goblin", CombatantType.NonPlayerCharacter, 10);
+        var combatant = new Combatant("Goblin", 10);
 
         var applied = combatant.ApplyHpDelta(-25);
 
@@ -20,7 +20,7 @@ public class CombatantTests
     [Fact]
     public void ApplyHpDelta_ClampsAtMaxHp()
     {
-        var combatant = new Combatant("Goblin", CombatantType.NonPlayerCharacter, 10);
+        var combatant = new Combatant("Goblin", 10);
         combatant.ApplyHpDelta(-5);
 
         var applied = combatant.ApplyHpDelta(100);
@@ -32,7 +32,7 @@ public class CombatantTests
     [Fact]
     public void IsDefeated_TrueAtZeroHp()
     {
-        var combatant = new Combatant("Goblin", CombatantType.NonPlayerCharacter, 10);
+        var combatant = new Combatant("Goblin", 10);
         combatant.ApplyHpDelta(-10);
 
         Assert.True(combatant.IsDefeated);
@@ -41,7 +41,7 @@ public class CombatantTests
     [Fact]
     public void ClearInitiative_UnsetsInitiative()
     {
-        var combatant = new Combatant("Goblin", CombatantType.NonPlayerCharacter, 10);
+        var combatant = new Combatant("Goblin", 10);
         combatant.SetInitiative(15);
 
         combatant.ClearInitiative();
@@ -52,7 +52,7 @@ public class CombatantTests
     [Fact]
     public void Duplicate_CopiesStateWithNewIdAndClearedInitiative()
     {
-        var original = new Combatant("Goblin", CombatantType.NonPlayerCharacter, 10);
+        var original = new Combatant("Goblin", 10);
         original.SetInitiative(14);
         original.ApplyHpDelta(-3);
         original.AddCounter("Rage", 1, 2);
@@ -75,7 +75,7 @@ public class CombatantTests
     [Fact]
     public void AddCondition_ThenRemoveCondition_RoundTrips()
     {
-        var combatant = new Combatant("Fighter", CombatantType.PlayerCharacter, 20);
+        var combatant = new Combatant("Fighter", 20);
 
         var condition = combatant.AddCondition("Prone");
         Assert.Single(combatant.Conditions);

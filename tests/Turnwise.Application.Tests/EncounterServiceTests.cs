@@ -16,7 +16,7 @@ public class EncounterServiceTests
     {
         var service = MakeService();
         var encounter = new Encounter();
-        var combatant = new Combatant("Goblin", CombatantType.NonPlayerCharacter, 20);
+        var combatant = new Combatant("Goblin", 20);
         encounter.AddCombatant(combatant);
 
         var applied = service.ApplyHpDelta(encounter, combatant.Id, -7);
@@ -33,7 +33,7 @@ public class EncounterServiceTests
     {
         var service = MakeService(15);
         var encounter = new Encounter();
-        var combatant = new Combatant("Fighter", CombatantType.PlayerCharacter, 20)
+        var combatant = new Combatant("Fighter", 20)
         {
             InitiativeFormula = "1d20+2"
         };
@@ -51,7 +51,7 @@ public class EncounterServiceTests
     {
         var service = MakeService();
         var encounter = new Encounter();
-        var combatant = new Combatant("Fighter", CombatantType.PlayerCharacter, 20);
+        var combatant = new Combatant("Fighter", 20);
         encounter.AddCombatant(combatant);
 
         Assert.Throws<InvalidOperationException>(() => service.RollInitiative(encounter, combatant.Id));
@@ -62,8 +62,8 @@ public class EncounterServiceTests
     {
         var service = MakeService();
         var encounter = new Encounter();
-        var goblin = new Combatant("Goblin", CombatantType.NonPlayerCharacter, 7);
-        var fighter = new Combatant("Fighter", CombatantType.PlayerCharacter, 20);
+        var goblin = new Combatant("Goblin", 7);
+        var fighter = new Combatant("Fighter", 20);
         encounter.AddCombatant(goblin);
         encounter.AddCombatant(fighter);
 
@@ -79,8 +79,8 @@ public class EncounterServiceTests
     {
         var service = MakeService();
         var encounter = new Encounter();
-        var a = new Combatant("A", CombatantType.NonPlayerCharacter, 20);
-        var b = new Combatant("B", CombatantType.NonPlayerCharacter, 10);
+        var a = new Combatant("A", 20);
+        var b = new Combatant("B", 10);
         encounter.AddCombatant(a);
         encounter.AddCombatant(b);
 
@@ -96,8 +96,8 @@ public class EncounterServiceTests
     {
         var service = MakeService(5); // 1d6 -> 5, reused for both since only one roll should be consumed
         var encounter = new Encounter();
-        var a = new Combatant("A", CombatantType.NonPlayerCharacter, 20);
-        var b = new Combatant("B", CombatantType.NonPlayerCharacter, 20);
+        var a = new Combatant("A", 20);
+        var b = new Combatant("B", 20);
         encounter.AddCombatant(a);
         encounter.AddCombatant(b);
         var formula = Domain.ValueObjects.DiceFormula.Parse("1d6");
@@ -113,8 +113,8 @@ public class EncounterServiceTests
     {
         var service = MakeService(2, 6); // first combatant rolls 2, second rolls 6
         var encounter = new Encounter();
-        var a = new Combatant("A", CombatantType.NonPlayerCharacter, 20);
-        var b = new Combatant("B", CombatantType.NonPlayerCharacter, 20);
+        var a = new Combatant("A", 20);
+        var b = new Combatant("B", 20);
         encounter.AddCombatant(a);
         encounter.AddCombatant(b);
         var formula = Domain.ValueObjects.DiceFormula.Parse("1d6");
@@ -130,8 +130,8 @@ public class EncounterServiceTests
     {
         var service = MakeService();
         var encounter = new Encounter();
-        var a = new Combatant("A", CombatantType.NonPlayerCharacter, 20);
-        var b = new Combatant("B", CombatantType.NonPlayerCharacter, 20);
+        var a = new Combatant("A", 20);
+        var b = new Combatant("B", 20);
         encounter.AddCombatant(a);
         encounter.AddCombatant(b);
 
@@ -146,8 +146,8 @@ public class EncounterServiceTests
     {
         var service = MakeService(10);
         var encounter = new Encounter();
-        var withFormula = new Combatant("A", CombatantType.PlayerCharacter, 20) { InitiativeFormula = "1d20" };
-        var withoutFormula = new Combatant("B", CombatantType.NonPlayerCharacter, 20);
+        var withFormula = new Combatant("A", 20) { InitiativeFormula = "1d20" };
+        var withoutFormula = new Combatant("B", 20);
         encounter.AddCombatant(withFormula);
         encounter.AddCombatant(withoutFormula);
 
@@ -164,7 +164,7 @@ public class EncounterServiceTests
     {
         var service = MakeService(4, 4);
         var encounter = new Encounter();
-        var combatant = new Combatant("Fighter", CombatantType.PlayerCharacter, 20);
+        var combatant = new Combatant("Fighter", 20);
         var roll = combatant.AddNamedRoll("Longsword hit", Domain.ValueObjects.DiceFormula.Parse("1d20+4"));
         encounter.AddCombatant(combatant);
 
