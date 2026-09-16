@@ -1,6 +1,4 @@
 @page "/"
-@implements IDisposable
-@inject EncounterSessionState State
 
 <PageTitle>Turnwise</PageTitle>
 
@@ -21,15 +19,3 @@
 
     <CombatLogPanel />
 </div>
-
-@code {
-    protected override void OnInitialized()
-    {
-        State.Changed += StateHasChanged;
-    }
-
-    public void Dispose()
-    {
-        State.Changed -= StateHasChanged;
-    }
-}
