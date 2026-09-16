@@ -1,8 +1,10 @@
 @inherits EncounterStateAwareComponentBase
 
-<div class="panel log-panel">
+<div class="panel card log-panel">
     <button class="log-toggle" @onclick="Toggle">
-        @(_expanded ? "▼" : "▶") Combat Log (@State.Current.Log.Count)
+        <i class="bi bi-file-text"></i>
+        Combat Log (@State.Current.Log.Count)
+        <i class="bi bi-chevron-down chevron @(_expanded ? "open" : "")" style="margin-left:auto"></i>
     </button>
     @if (_expanded)
     {
@@ -11,7 +13,7 @@
             {
                 <li>
                     <span class="log-time">@entry.Timestamp.ToLocalTime().ToString("HH:mm:ss")</span>
-                    <span class="log-type">[@entry.Type]</span>
+                    <span class="log-type">@FormatType(entry.Type)</span>
                     @entry.Message
                 </li>
             }
@@ -23,4 +25,12 @@
     private bool _expanded;
 
     private void Toggle() => _expanded = !_expanded;
+
+    private static string FormatType(CombatLogEntryType type) => type switch
+    {
+        CombatLogEntryType.HpChange => "HP",
+        CombatLogEntryType.InitiativeChange => "Initiative",
+        CombatLogEntryType.DiceRoll => "Roll",
+        _ => type.ToString()
+    };
 }

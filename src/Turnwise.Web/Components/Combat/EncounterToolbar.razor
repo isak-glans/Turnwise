@@ -1,70 +1,34 @@
 @inherits EncounterStateAwareComponentBase
-@inject EncounterService EncounterService
 @inject EncounterFileService EncounterFileService
 @inject FileDownloadService FileDownload
 
-<div class="toolbar">
-    <div class="toolbar-group">
-        <strong>@State.Current.Name</strong>
-        <span class="round-badge">Round @State.Current.Round</span>
+<div class="app-header card">
+    <div class="brand">
+        <span class="brand-icon">⚔️</span>
+        <span class="brand-title">Turnwise</span>
     </div>
 
-    <div class="toolbar-group">
-        <button @onclick="NextTurn">Next turn</button>
-        <button @onclick="AutoSort">Auto-sort</button>
-        <label class="checkbox-label">
-            <input type="checkbox" @bind="State.Current.AllowGmBulkInitiativeRoll" />
-            Allow GM to roll initiative for all
-        </label>
-        @if (State.Current.AllowGmBulkInitiativeRoll)
-        {
-            <button @onclick="RollAllInitiative">Roll all initiative</button>
-        }
+    <div class="encounter-name-field">
+        <input class="encounter-name-input" @bind="State.Current.Name" @bind:event="oninput" placeholder="Encounter name" />
+        <i class="bi bi-pencil"></i>
     </div>
 
-    <div class="toolbar-group">
-        <button @onclick="NewEncounter">New Encounter</button>
-        <button @onclick="SaveEncounter">Save Encounter</button>
-        <label class="file-button">
-            Load Encounter
+    <div class="header-actions">
+        <label class="btn file-button" title="Loading will overwrite the current encounter.">
+            <i class="bi bi-folder2-open"></i> Load Encounter
             <InputFile OnChange="LoadEncounter" accept=".json" />
         </label>
-        <span class="warning-text">Loading will overwrite the current encounter.</span>
+        <button class="btn" @onclick="SaveEncounter"><i class="bi bi-save"></i> Save Encounter</button>
+        <button class="btn" @onclick="NewEncounter"><i class="bi bi-plus-lg"></i> New Encounter</button>
     </div>
 </div>
 @if (!string.IsNullOrEmpty(_error))
 {
-    <div class="error-text">@_error</div>
+    <div class="error-banner">@_error</div>
 }
 
 @code {
     private string? _error;
-
-    private void NextTurn()
-    {
-        EncounterService.NextTurn(State.Current);
-        State.NotifyChanged();
-    }
-
-    private void AutoSort()
-    {
-        EncounterService.AutoSort(State.Current);
-        State.NotifyChanged();
-    }
-
-    private void RollAllInitiative()
-    {
-        try
-        {
-            EncounterService.RollInitiativeForAll(State.Current);
-            _error = null;
-        }
-        catch (Exception ex)
-        {
-            _error = ex.Message;
-        }
-        State.NotifyChanged();
-    }
 
     private void NewEncounter() => State.NewEncounter();
 

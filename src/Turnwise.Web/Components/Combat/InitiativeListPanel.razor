@@ -2,60 +2,160 @@
 @inject EncounterService EncounterService
 @inject CharacterTemplateService CharacterTemplateService
 
-<div class="panel initiative-panel">
-    <h2>Initiative</h2>
+<div class="panel card">
+    <div class="panel-header">
+        <h2><i class="bi bi-list-ol"></i> Initiative</h2>
+        <div class="initiative-controls">
+            <span class="round-badge">Round @State.Current.Round</span>
+            <button class="icon-btn" title="Next turn" @onclick="NextTurn"><i class="bi bi-skip-end-fill"></i></button>
+            <button class="icon-btn" title="Auto-sort by initiative" @onclick="AutoSort"><i class="bi bi-sort-numeric-down"></i></button>
+            <button class="icon-btn @(State.Current.AllowGmBulkInitiativeRoll ? "active" : "")"
+                    title="Allow GM to roll initiative for all combatants at once"
+                    @onclick="ToggleBulkRoll">
+                <i class="bi bi-people-fill"></i>
+            </button>
+        </div>
+    </div>
+
+    @if (State.Current.AllowGmBulkInitiativeRoll)
+    {
+        <button class="btn btn-block btn-sm" style="margin-bottom:0.6rem" @onclick="RollAllInitiative">
+            <i class="bi bi-dice-6-fill"></i> Roll initiative for all
+        </button>
+    }
+
     <ul class="combatant-list">
         @for (var i = 0; i < State.Current.Combatants.Count; i++)
         {
             var index = i;
             var combatant = State.Current.Combatants[index];
-            <li class="combatant-row @(combatant.Id == State.Current.ActiveCombatantId ? "active" : "") @(combatant.Id == State.SelectedCombatantId ? "selected" : "")"
+            var isActive = combatant.Id == State.Current.ActiveCombatantId;
+            <li class="combatant-card @(isActive ? "active" : "") @(combatant.Id == State.SelectedCombatantId ? "selected" : "")"
                 draggable="true"
                 @ondragstart="() => _draggedIndex = index"
                 @ondragover:preventDefault
                 @ondrop="() => Drop(index)"
                 @onclick="() => State.SelectCombatant(combatant.Id)">
-                <span class="portrait">@(string.IsNullOrEmpty(combatant.PortraitBase64) ? "🧑" : "🖼")</span>
-                <span class="name">@combatant.Name</span>
-                <span class="type">@(combatant.Type == CombatantType.PlayerCharacter ? "PC" : "NPC")</span>
-                <span class="initiative">@(combatant.Initiative?.ToString() ?? "—")</span>
-                <div class="hp-bar">
-                    <div class="hp-bar-fill" style="width:@(HpPercent(combatant))%"></div>
+                <span class="turn-badge @(isActive ? "is-active" : "")">@(isActive ? "▶" : (index + 1).ToString())</span>
+                <span class="avatar avatar-sm" style="@(HasPortrait(combatant) ? "" : $"background:{AvatarHelper.ColorFor(combatant.Id)}")">
+                    @if (HasPortrait(combatant))
+                    {
+                        <img src="data:image/png;base64,@combatant.PortraitBase64" alt="" />
+                    }
+                    else
+                    {
+                        @AvatarHelper.InitialsFor(combatant.Name)
+                    }
+                </span>
+                <span class="combatant-main">
+                    <span class="combatant-name">@combatant.Name</span>
+                    <span class="combatant-type">@(combatant.Type == CombatantType.PlayerCharacter ? "Player character" : "Monster")</span>
+                </span>
+                <span class="combatant-init">
+                    Init
+                    <span class="value">@(combatant.Initiative?.ToString() ?? "—")</span>
+                </span>
+                <span class="combatant-hp">
                     <span class="hp-text">@combatant.CurrentHp / @combatant.MaxHp</span>
-                </div>
-                <button class="remove-btn" title="Remove from encounter" @onclick="() => Remove(combatant.Id)" @onclick:stopPropagation>✕</button>
+                    <span class="hp-bar">
+                        <span class="hp-bar-fill @HpFillClass(combatant)" style="width:@(HpPercent(combatant))%"></span>
+                    </span>
+                </span>
+                <button class="icon-btn-ghost" title="Remove from encounter" @onclick="() => Remove(combatant.Id)" @onclick:stopPropagation>
+                    <i class="bi bi-x-lg"></i>
+                </button>
             </li>
         }
     </ul>
 
-    <div class="add-combatant">
-        <input @bind="_newName" placeholder="Name" />
-        <select @bind="_newType">
-            <option value="@CombatantType.PlayerCharacter">PC</option>
-            <option value="@CombatantType.NonPlayerCharacter">NPC</option>
-        </select>
-        <input type="number" @bind="_newMaxHp" min="0" placeholder="Max HP" />
-        <button @onclick="AddCombatant">Add</button>
-    </div>
-    <label class="file-button">
-        Load character from file
-        <InputFile OnChange="LoadTemplate" accept=".json" />
-    </label>
+    @if (_showAddForm)
+    {
+        <div class="add-combatant-form">
+            <div class="add-combatant-row">
+                <input @bind="_newName" placeholder="Name" />
+                <select @bind="_newType">
+                    <option value="@CombatantType.PlayerCharacter">PC</option>
+                    <option value="@CombatantType.NonPlayerCharacter">NPC</option>
+                </select>
+                <input type="number" @bind="_newMaxHp" min="0" placeholder="Max HP" />
+            </div>
+            <div class="add-combatant-row">
+                <button class="btn btn-primary" @onclick="AddCombatant"><i class="bi bi-check-lg"></i> Add</button>
+                <button class="btn" @onclick="() => _showAddForm = false">Cancel</button>
+                <label class="btn file-button">
+                    <i class="bi bi-upload"></i> From file
+                    <InputFile OnChange="LoadTemplate" accept=".json" />
+                </label>
+            </div>
+        </div>
+    }
+    else
+    {
+        <button class="btn btn-block" @onclick="() => _showAddForm = true">
+            <i class="bi bi-plus-lg"></i> Add Combatant
+        </button>
+    }
 
     @if (!string.IsNullOrEmpty(_error))
     {
-        <div class="error-text">@_error</div>
+        <div class="error-banner">@_error</div>
     }
 </div>
 
 @code {
     private int? _draggedIndex;
+    private bool _showAddForm;
     private string _newName = "";
     private CombatantType _newType = CombatantType.NonPlayerCharacter;
     private int _newMaxHp = 10;
     private string? _error;
 
+    private static bool HasPortrait(Combatant c) => !string.IsNullOrEmpty(c.PortraitBase64);
+
     private static int HpPercent(Combatant c) => c.MaxHp == 0 ? 0 : (int)Math.Round(100.0 * c.CurrentHp / c.MaxHp);
+
+    private static string HpFillClass(Combatant c)
+    {
+        var percent = HpPercent(c);
+        return percent switch
+        {
+            <= 25 => "danger",
+            <= 50 => "warning",
+            _ => ""
+        };
+    }
+
+    private void NextTurn()
+    {
+        EncounterService.NextTurn(State.Current);
+        State.NotifyChanged();
+    }
+
+    private void AutoSort()
+    {
+        EncounterService.AutoSort(State.Current);
+        State.NotifyChanged();
+    }
+
+    private void ToggleBulkRoll()
+    {
+        State.Current.AllowGmBulkInitiativeRoll = !State.Current.AllowGmBulkInitiativeRoll;
+        State.NotifyChanged();
+    }
+
+    private void RollAllInitiative()
+    {
+        try
+        {
+            EncounterService.RollInitiativeForAll(State.Current);
+            _error = null;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        State.NotifyChanged();
+    }
 
     private void Drop(int targetIndex)
     {
@@ -78,6 +178,7 @@
         EncounterService.AddCombatant(State.Current, combatant);
         _newName = "";
         _newMaxHp = 10;
+        _showAddForm = false;
         State.SelectCombatant(combatant.Id);
     }
 
@@ -98,6 +199,7 @@
             await using var stream = e.File.OpenReadStream(maxAllowedSize: 5_000_000);
             var combatant = await CharacterTemplateService.LoadFromTemplateAsync(stream);
             EncounterService.AddCombatant(State.Current, combatant);
+            _showAddForm = false;
             State.SelectCombatant(combatant.Id);
             _error = null;
         }

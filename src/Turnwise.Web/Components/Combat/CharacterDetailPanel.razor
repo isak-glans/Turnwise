@@ -1,7 +1,7 @@
 @inherits EncounterStateAwareComponentBase
 @inject EncounterService EncounterService
 
-<div class="panel detail-panel">
+<div class="panel card">
     @if (State.SelectedCombatant is null)
     {
         <p class="empty-hint">Select a combatant from the initiative list.</p>
@@ -9,100 +9,174 @@
     else
     {
         var combatant = State.SelectedCombatant;
-        <div class="identity">
-            <h2>@combatant.Name</h2>
-            <span class="type-badge">@(combatant.Type == CombatantType.PlayerCharacter ? "Player Character" : "NPC")</span>
+        <div class="detail-header">
+            <span class="avatar avatar-lg" style="@(HasPortrait(combatant) ? "" : $"background:{AvatarHelper.ColorFor(combatant.Id)}")">
+                @if (HasPortrait(combatant))
+                {
+                    <img src="data:image/png;base64,@combatant.PortraitBase64" alt="" />
+                }
+                else
+                {
+                    @AvatarHelper.InitialsFor(combatant.Name)
+                }
+            </span>
+            <div class="detail-title">
+                <input class="name-input-lg" value="@combatant.Name" @oninput="e => RenameCombatant(combatant, e)" />
+                <div class="detail-subtitle">@(combatant.Type == CombatantType.PlayerCharacter ? "Player character" : "Monster")</div>
+            </div>
             @if (combatant.Id == State.Current.ActiveCombatantId)
             {
-                <span class="active-badge">Active</span>
+                <span class="badge badge-active"><i class="bi bi-lightning-fill"></i> Active</span>
             }
         </div>
 
-        <section class="hp-section">
-            <h3>HP</h3>
-            <div class="hp-bar large">
-                <div class="hp-bar-fill" style="width:@(HpPercent(combatant))%"></div>
-                <span class="hp-text">@combatant.CurrentHp / @combatant.MaxHp</span>
+        <div class="detail-grid">
+            <div class="portrait-box">
+                @if (HasPortrait(combatant))
+                {
+                    <img src="data:image/png;base64,@combatant.PortraitBase64" alt="" />
+                }
+                else
+                {
+                    <span class="avatar" style="background:@AvatarHelper.ColorFor(combatant.Id)">@AvatarHelper.InitialsFor(combatant.Name)</span>
+                }
+                <label class="portrait-edit-btn" title="Change image">
+                    <i class="bi bi-pencil"></i>
+                    <InputFile OnChange="e => ChangePortrait(combatant, e)" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;" />
+                </label>
             </div>
-            <label>
-                Max HP
-                <input type="number" value="@combatant.MaxHp" disabled="@combatant.MaxHpLocked" @onchange="e => SetMaxHp(combatant, e)" />
-            </label>
-            <label class="checkbox-label">
-                <input type="checkbox" @bind="combatant.MaxHpLocked" /> Lock max HP
-            </label>
-            <div class="hp-delta">
-                <input @bind="_hpDelta" placeholder="e.g. -14 or +7" />
-                <button @onclick="() => ApplyHpDelta(combatant)">Apply</button>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-icon icon-danger"><i class="bi bi-heart-fill"></i></span> HP
+                </div>
+                <div class="stat-big">@combatant.CurrentHp / @combatant.MaxHp</div>
+                <div class="hp-bar large">
+                    <div class="hp-bar-fill" style="width:@(HpPercent(combatant))%"></div>
+                </div>
+
+                <span class="field-label">Max HP</span>
+                <div class="field-row">
+                    <input type="number" value="@combatant.MaxHp" disabled="@combatant.MaxHpLocked" @onchange="e => SetMaxHp(combatant, e)" />
+                    <button class="btn lock-toggle @(combatant.MaxHpLocked ? "locked" : "")" @onclick="() => ToggleLock(combatant)">
+                        <i class="bi @(combatant.MaxHpLocked ? "bi-lock-fill" : "bi-unlock")"></i>
+                        @(combatant.MaxHpLocked ? "Locked" : "Unlocked")
+                    </button>
+                </div>
+
+                <span class="field-label">Change HP</span>
+                <div class="field-row">
+                    <input @bind="_hpDelta" placeholder="e.g. -14 or +7" />
+                    <button class="btn btn-primary" @onclick="() => ApplyHpDelta(combatant)">Apply</button>
+                </div>
+                <p class="hint-text">Negative = damage, positive = healing</p>
             </div>
-        </section>
 
-        <section class="initiative-section">
-            <h3>Initiative</h3>
-            <input @bind="combatant.InitiativeFormula" placeholder="e.g. 1d20+2" />
-            <button @onclick="() => RollInitiative(combatant)">Roll</button>
-            <input type="number" value="@combatant.Initiative" @onchange="e => SetInitiative(combatant, e)" placeholder="—" />
-        </section>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-icon icon-accent"><i class="bi bi-dice-5-fill"></i></span> Initiative
+                </div>
+                <div class="stat-big">@(combatant.Initiative?.ToString() ?? "—")</div>
 
-        <section class="rolls-section">
-            <h3>Dice Rolls</h3>
+                <span class="field-label">Initiative formula</span>
+                <div class="field-row">
+                    <input @bind="combatant.InitiativeFormula" placeholder="e.g. 1d20+2" />
+                    <button class="btn" @onclick="() => RollInitiative(combatant)"><i class="bi bi-dice-6-fill"></i> Roll</button>
+                </div>
+
+                <span class="field-label">Current initiative</span>
+                <input type="number" value="@combatant.Initiative" @onchange="e => SetInitiative(combatant, e)" placeholder="—" />
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title"><span class="stat-icon"><i class="bi bi-dice-6"></i></span> Dice Rolls</span>
+                <button class="btn btn-sm" @onclick="() => _showAddRoll = !_showAddRoll"><i class="bi bi-plus-lg"></i> Add roll</button>
+            </div>
             <ul>
                 @foreach (var roll in combatant.NamedRolls)
                 {
-                    <li>
-                        <span>@roll.Name (@roll.Formula)</span>
-                        <button @onclick="() => RollNamed(combatant, roll.Id)">Roll</button>
+                    <li class="roll-row">
+                        <span class="stat-icon icon-accent"><i class="bi bi-dice-6-fill"></i></span>
+                        <span class="roll-info">
+                            <span class="roll-name">@roll.Name</span>
+                        </span>
+                        <span class="formula-box">@roll.Formula</span>
+                        <button class="btn btn-sm" @onclick="() => RollNamed(combatant, roll.Id)">Roll</button>
+                        <button class="icon-btn-ghost" title="Remove roll" @onclick="() => RemoveRoll(combatant, roll.Id)"><i class="bi bi-trash"></i></button>
                     </li>
                 }
             </ul>
-            <div class="add-roll">
-                <input @bind="_newRollName" placeholder="Name" />
-                <input @bind="_newRollFormula" placeholder="1d20+4" />
-                <button @onclick="() => AddRoll(combatant)">Add roll</button>
-            </div>
-        </section>
+            @if (_showAddRoll)
+            {
+                <div class="add-inline-form">
+                    <input @bind="_newRollName" placeholder="Name" />
+                    <input @bind="_newRollFormula" placeholder="1d20+4" />
+                    <button class="btn btn-primary" @onclick="() => AddRoll(combatant)">Add</button>
+                </div>
+            }
+        </div>
 
-        <section class="counters-section">
-            <h3>Counters</h3>
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title"><span class="stat-icon"><i class="bi bi-stack"></i></span> Counters</span>
+                <button class="btn btn-sm" @onclick="() => _showAddCounter = !_showAddCounter"><i class="bi bi-plus-lg"></i> Add counter</button>
+            </div>
             <ul>
                 @foreach (var counter in combatant.Counters)
                 {
-                    <li>
-                        <span>@counter.Name</span>
-                        <button @onclick="() => AdjustCounter(counter, -1)">-</button>
-                        <span>@counter.Current / @counter.Max</span>
-                        <button @onclick="() => AdjustCounter(counter, 1)">+</button>
-                        @if (counter.ShowBar)
-                        {
-                            <div class="hp-bar small"><div class="hp-bar-fill" style="width:@(CounterPercent(counter))%"></div></div>
-                        }
+                    <li class="counter-row">
+                        <span class="stat-icon icon-accent"><i class="bi bi-hexagon-fill"></i></span>
+                        <span class="counter-name">@counter.Name</span>
+                        <button class="btn counter-step-btn" @onclick="() => AdjustCounter(counter, -1)"><i class="bi bi-dash"></i></button>
+                        <span class="counter-value">@counter.Current / @counter.Max</span>
+                        <button class="btn counter-step-btn" @onclick="() => AdjustCounter(counter, 1)"><i class="bi bi-plus"></i></button>
+                        <button class="icon-btn-ghost" title="Remove counter" @onclick="() => RemoveCounter(combatant, counter.Id)"><i class="bi bi-trash"></i></button>
                     </li>
                 }
             </ul>
-            <div class="add-counter">
-                <input @bind="_newCounterName" placeholder="Name" />
-                <input type="number" @bind="_newCounterMax" placeholder="Max" />
-                <button @onclick="() => AddCounter(combatant)">Add counter</button>
-            </div>
-        </section>
+            @if (_showAddCounter)
+            {
+                <div class="add-inline-form">
+                    <input @bind="_newCounterName" placeholder="Name" />
+                    <input type="number" @bind="_newCounterMax" placeholder="Max" />
+                    <button class="btn btn-primary" @onclick="() => AddCounter(combatant)">Add</button>
+                </div>
+            }
+        </div>
 
         @if (!string.IsNullOrEmpty(_error))
         {
-            <div class="error-text">@_error</div>
+            <div class="error-banner">@_error</div>
         }
     }
 </div>
 
 @code {
     private string _hpDelta = "";
+    private bool _showAddRoll;
+    private bool _showAddCounter;
     private string _newRollName = "";
     private string _newRollFormula = "";
     private string _newCounterName = "";
     private int _newCounterMax = 3;
     private string? _error;
 
+    private static bool HasPortrait(Combatant c) => !string.IsNullOrEmpty(c.PortraitBase64);
     private static int HpPercent(Combatant c) => c.MaxHp == 0 ? 0 : (int)Math.Round(100.0 * c.CurrentHp / c.MaxHp);
-    private static int CounterPercent(Counter c) => c.Max == 0 ? 0 : (int)Math.Round(100.0 * c.Current / c.Max);
+
+    private void RenameCombatant(Combatant combatant, ChangeEventArgs e)
+    {
+        combatant.Name = e.Value?.ToString() ?? combatant.Name;
+        State.NotifyChanged();
+    }
+
+    private void ToggleLock(Combatant combatant)
+    {
+        combatant.MaxHpLocked = !combatant.MaxHpLocked;
+        State.NotifyChanged();
+    }
 
     private void SetMaxHp(Combatant combatant, ChangeEventArgs e)
     {
@@ -155,6 +229,12 @@
         State.NotifyChanged();
     }
 
+    private void RemoveRoll(Combatant combatant, Guid rollId)
+    {
+        combatant.RemoveNamedRoll(rollId);
+        State.NotifyChanged();
+    }
+
     private void AddRoll(Combatant combatant)
     {
         if (string.IsNullOrWhiteSpace(_newRollName))
@@ -172,6 +252,7 @@
         combatant.AddNamedRoll(_newRollName, formula!);
         _newRollName = "";
         _newRollFormula = "";
+        _showAddRoll = false;
         _error = null;
         State.NotifyChanged();
     }
@@ -179,6 +260,12 @@
     private void AdjustCounter(Counter counter, int delta)
     {
         counter.Adjust(delta);
+        State.NotifyChanged();
+    }
+
+    private void RemoveCounter(Combatant combatant, Guid counterId)
+    {
+        combatant.RemoveCounter(counterId);
         State.NotifyChanged();
     }
 
@@ -192,6 +279,25 @@
         combatant.AddCounter(_newCounterName, _newCounterMax, _newCounterMax);
         _newCounterName = "";
         _newCounterMax = 3;
+        _showAddCounter = false;
+        State.NotifyChanged();
+    }
+
+    private async Task ChangePortrait(Combatant combatant, InputFileChangeEventArgs e)
+    {
+        try
+        {
+            const int maxBytes = 1_500_000;
+            using var stream = e.File.OpenReadStream(maxAllowedSize: maxBytes);
+            using var memory = new MemoryStream();
+            await stream.CopyToAsync(memory);
+            combatant.PortraitBase64 = Convert.ToBase64String(memory.ToArray());
+            _error = null;
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to load image: {ex.Message}";
+        }
         State.NotifyChanged();
     }
 }
