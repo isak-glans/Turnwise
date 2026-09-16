@@ -52,16 +52,21 @@
                 <div class="stat-card-header">
                     <span class="stat-icon icon-accent"><i class="bi bi-dice-5-fill"></i></span> Initiative
                 </div>
-                <div class="stat-big">@(combatant.Initiative?.ToString() ?? "—")</div>
+                <div class="stat-big-row">
+                    <input type="number" class="stat-big-input" value="@combatant.Initiative" disabled="@combatant.InitiativeLocked"
+                           title="Current initiative" placeholder="—" @onchange="e => SetInitiative(combatant, e)" />
+                    <button class="icon-btn @(combatant.InitiativeLocked ? "active" : "")"
+                            title="@(combatant.InitiativeLocked ? "Unlock initiative" : "Lock initiative")"
+                            @onclick="() => ToggleInitiativeLock(combatant)">
+                        <i class="bi @(combatant.InitiativeLocked ? "bi-lock-fill" : "bi-unlock")"></i>
+                    </button>
+                </div>
 
                 <span class="field-label">Initiative formula</span>
                 <div class="field-row">
                     <input @bind="combatant.InitiativeFormula" placeholder="e.g. 1d20+2" />
                     <button class="btn" @onclick="() => RollInitiative(combatant)"><i class="bi bi-dice-6-fill"></i> Roll</button>
                 </div>
-
-                <span class="field-label">Current initiative</span>
-                <input type="number" value="@combatant.Initiative" @onchange="e => SetInitiative(combatant, e)" placeholder="—" />
             </div>
         </div>
 
@@ -166,6 +171,12 @@
     {
         var text = e.Value?.ToString();
         combatant.SetInitiative(int.TryParse(text, out var value) ? value : null);
+        State.NotifyChanged();
+    }
+
+    private void ToggleInitiativeLock(Combatant combatant)
+    {
+        combatant.InitiativeLocked = !combatant.InitiativeLocked;
         State.NotifyChanged();
     }
 

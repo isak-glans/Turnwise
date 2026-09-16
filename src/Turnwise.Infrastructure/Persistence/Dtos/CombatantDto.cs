@@ -29,6 +29,7 @@ public sealed class CombatantDto
     public int CurrentHp { get; set; }
     public string? InitiativeFormula { get; set; }
     public int? Initiative { get; set; }
+    public bool InitiativeLocked { get; set; }
     public List<NamedRollDto> NamedRolls { get; set; } = [];
     public List<CounterDto> Counters { get; set; } = [];
 }

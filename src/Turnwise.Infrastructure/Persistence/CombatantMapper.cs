@@ -19,6 +19,7 @@ internal static class CombatantMapper
         CurrentHp = combatant.CurrentHp,
         InitiativeFormula = combatant.InitiativeFormula,
         Initiative = combatant.Initiative,
+        InitiativeLocked = combatant.InitiativeLocked,
         NamedRolls = combatant.NamedRolls
             .Select(r => new NamedRollDto { Id = r.Id, Name = r.Name, Formula = r.Formula.ToString() })
             .ToList(),
@@ -44,7 +45,8 @@ internal static class CombatantMapper
             dto.PortraitBase64,
             dto.Description,
             dto.InitiativeFormula,
-            dto.Initiative);
+            dto.Initiative,
+            dto.InitiativeLocked);
 
         foreach (var roll in dto.NamedRolls)
         {

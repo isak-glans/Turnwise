@@ -24,6 +24,7 @@ public sealed class Combatant
 
     public string? InitiativeFormula { get; set; }
     public int? Initiative { get; private set; }
+    public bool InitiativeLocked { get; set; }
 
     public IReadOnlyList<NamedRoll> NamedRolls => _namedRolls;
     public IReadOnlyList<Counter> Counters => _counters;
@@ -61,7 +62,8 @@ public sealed class Combatant
         string? portraitBase64,
         string description,
         string? initiativeFormula,
-        int? initiative)
+        int? initiative,
+        bool initiativeLocked = false)
     {
         var combatant = new Combatant(name, type, maxHp, id)
         {
@@ -69,6 +71,7 @@ public sealed class Combatant
             PortraitBase64 = portraitBase64,
             Description = description,
             InitiativeFormula = initiativeFormula,
+            InitiativeLocked = initiativeLocked,
             CurrentHp = Math.Clamp(currentHp, 0, maxHp)
         };
         combatant.SetInitiative(initiative);
