@@ -1,0 +1,35 @@
+@page "/"
+@implements IDisposable
+@inject EncounterSessionState State
+
+<PageTitle>Turnwise</PageTitle>
+
+<div class="app-shell">
+    <EncounterToolbar />
+
+    <div class="main-grid">
+        <section class="col col-initiative">
+            <InitiativeListPanel />
+        </section>
+        <section class="col col-detail">
+            <CharacterDetailPanel />
+        </section>
+        <section class="col col-info">
+            <CharacterInfoPanel />
+        </section>
+    </div>
+
+    <CombatLogPanel />
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        State.Changed += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        State.Changed -= StateHasChanged;
+    }
+}

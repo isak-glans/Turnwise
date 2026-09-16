@@ -1,0 +1,26 @@
+@inject EncounterSessionState State
+
+<div class="panel log-panel">
+    <button class="log-toggle" @onclick="Toggle">
+        @(_expanded ? "▼" : "▶") Combat Log (@State.Current.Log.Count)
+    </button>
+    @if (_expanded)
+    {
+        <ul class="log-list">
+            @foreach (var entry in State.Current.Log.OrderByDescending(e => e.Timestamp))
+            {
+                <li>
+                    <span class="log-time">@entry.Timestamp.ToLocalTime().ToString("HH:mm:ss")</span>
+                    <span class="log-type">[@entry.Type]</span>
+                    @entry.Message
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+@code {
+    private bool _expanded;
+
+    private void Toggle() => _expanded = !_expanded;
+}

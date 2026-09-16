@@ -1,0 +1,110 @@
+@inject EncounterSessionState State
+@inject EncounterService EncounterService
+@inject CharacterTemplateService CharacterTemplateService
+
+<div class="panel initiative-panel">
+    <h2>Initiative</h2>
+    <ul class="combatant-list">
+        @for (var i = 0; i < State.Current.Combatants.Count; i++)
+        {
+            var index = i;
+            var combatant = State.Current.Combatants[index];
+            <li class="combatant-row @(combatant.Id == State.Current.ActiveCombatantId ? "active" : "") @(combatant.Id == State.SelectedCombatantId ? "selected" : "")"
+                draggable="true"
+                @ondragstart="() => _draggedIndex = index"
+                @ondragover:preventDefault
+                @ondrop="() => Drop(index)"
+                @onclick="() => State.SelectCombatant(combatant.Id)">
+                <span class="portrait">@(string.IsNullOrEmpty(combatant.PortraitBase64) ? "🧑" : "🖼")</span>
+                <span class="name">@combatant.Name</span>
+                <span class="type">@(combatant.Type == CombatantType.PlayerCharacter ? "PC" : "NPC")</span>
+                <span class="initiative">@(combatant.Initiative?.ToString() ?? "—")</span>
+                <div class="hp-bar">
+                    <div class="hp-bar-fill" style="width:@(HpPercent(combatant))%"></div>
+                    <span class="hp-text">@combatant.CurrentHp / @combatant.MaxHp</span>
+                </div>
+                <button class="remove-btn" title="Remove from encounter" @onclick="() => Remove(combatant.Id)" @onclick:stopPropagation>✕</button>
+            </li>
+        }
+    </ul>
+
+    <div class="add-combatant">
+        <input @bind="_newName" placeholder="Name" />
+        <select @bind="_newType">
+            <option value="@CombatantType.PlayerCharacter">PC</option>
+            <option value="@CombatantType.NonPlayerCharacter">NPC</option>
+        </select>
+        <input type="number" @bind="_newMaxHp" min="0" placeholder="Max HP" />
+        <button @onclick="AddCombatant">Add</button>
+    </div>
+    <label class="file-button">
+        Load character from file
+        <InputFile OnChange="LoadTemplate" accept=".json" />
+    </label>
+
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <div class="error-text">@_error</div>
+    }
+</div>
+
+@code {
+    private int? _draggedIndex;
+    private string _newName = "";
+    private CombatantType _newType = CombatantType.NonPlayerCharacter;
+    private int _newMaxHp = 10;
+    private string? _error;
+
+    private static int HpPercent(Combatant c) => c.MaxHp == 0 ? 0 : (int)Math.Round(100.0 * c.CurrentHp / c.MaxHp);
+
+    private void Drop(int targetIndex)
+    {
+        if (_draggedIndex is { } from && from != targetIndex)
+        {
+            EncounterService.Reorder(State.Current, from, targetIndex);
+        }
+        _draggedIndex = null;
+        State.NotifyChanged();
+    }
+
+    private void AddCombatant()
+    {
+        if (string.IsNullOrWhiteSpace(_newName))
+        {
+            return;
+        }
+
+        var combatant = new Combatant(_newName, _newType, Math.Max(0, _newMaxHp));
+        EncounterService.AddCombatant(State.Current, combatant);
+        _newName = "";
+        _newMaxHp = 10;
+        State.SelectCombatant(combatant.Id);
+    }
+
+    private void Remove(Guid id)
+    {
+        if (State.SelectedCombatantId == id)
+        {
+            State.SelectCombatant(null);
+        }
+        EncounterService.RemoveCombatant(State.Current, id);
+        State.NotifyChanged();
+    }
+
+    private async Task LoadTemplate(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            await using var stream = e.File.OpenReadStream(maxAllowedSize: 5_000_000);
+            var combatant = await CharacterTemplateService.LoadFromTemplateAsync(stream);
+            EncounterService.AddCombatant(State.Current, combatant);
+            State.SelectCombatant(combatant.Id);
+            _error = null;
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to load character: {ex.Message}";
+            State.NotifyChanged();
+        }
+    }
+}

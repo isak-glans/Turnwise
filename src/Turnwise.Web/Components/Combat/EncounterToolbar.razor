@@ -1,0 +1,97 @@
+@inject EncounterSessionState State
+@inject EncounterService EncounterService
+@inject EncounterFileService EncounterFileService
+@inject FileDownloadService FileDownload
+
+<div class="toolbar">
+    <div class="toolbar-group">
+        <strong>@State.Current.Name</strong>
+        <span class="round-badge">Round @State.Current.Round</span>
+    </div>
+
+    <div class="toolbar-group">
+        <button @onclick="NextTurn">Next turn</button>
+        <button @onclick="AutoSort">Auto-sort</button>
+        <label class="checkbox-label">
+            <input type="checkbox" @bind="State.Current.AllowGmBulkInitiativeRoll" />
+            Allow GM to roll initiative for all
+        </label>
+        @if (State.Current.AllowGmBulkInitiativeRoll)
+        {
+            <button @onclick="RollAllInitiative">Roll all initiative</button>
+        }
+    </div>
+
+    <div class="toolbar-group">
+        <button @onclick="NewEncounter">New Encounter</button>
+        <button @onclick="SaveEncounter">Save Encounter</button>
+        <label class="file-button">
+            Load Encounter
+            <InputFile OnChange="LoadEncounter" accept=".json" />
+        </label>
+        <span class="warning-text">Loading will overwrite the current encounter.</span>
+    </div>
+</div>
+@if (!string.IsNullOrEmpty(_error))
+{
+    <div class="error-text">@_error</div>
+}
+
+@code {
+    private string? _error;
+
+    private void NextTurn()
+    {
+        EncounterService.NextTurn(State.Current);
+        State.NotifyChanged();
+    }
+
+    private void AutoSort()
+    {
+        EncounterService.AutoSort(State.Current);
+        State.NotifyChanged();
+    }
+
+    private void RollAllInitiative()
+    {
+        try
+        {
+            EncounterService.RollInitiativeForAll(State.Current);
+            _error = null;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        State.NotifyChanged();
+    }
+
+    private void NewEncounter() => State.NewEncounter();
+
+    private async Task SaveEncounter()
+    {
+        using var stream = new MemoryStream();
+        await EncounterFileService.SaveEncounterAsync(State.Current, stream);
+        var fileName = $"{Sanitize(State.Current.Name)}.turnwise-encounter.json";
+        await FileDownload.DownloadAsync(fileName, "application/json", stream.ToArray());
+    }
+
+    private async Task LoadEncounter(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            await using var stream = e.File.OpenReadStream(maxAllowedSize: 10_000_000);
+            var encounter = await EncounterFileService.LoadEncounterAsync(stream);
+            State.ReplaceEncounter(encounter);
+            _error = null;
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to load encounter: {ex.Message}";
+            State.NotifyChanged();
+        }
+    }
+
+    private static string Sanitize(string name) =>
+        string.Concat(name.Where(c => !Path.GetInvalidFileNameChars().Contains(c))).Replace(' ', '-');
+}

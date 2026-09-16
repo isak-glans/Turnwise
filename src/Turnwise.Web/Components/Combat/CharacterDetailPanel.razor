@@ -1,0 +1,197 @@
+@inject EncounterSessionState State
+@inject EncounterService EncounterService
+
+<div class="panel detail-panel">
+    @if (State.SelectedCombatant is null)
+    {
+        <p class="empty-hint">Select a combatant from the initiative list.</p>
+    }
+    else
+    {
+        var combatant = State.SelectedCombatant;
+        <div class="identity">
+            <h2>@combatant.Name</h2>
+            <span class="type-badge">@(combatant.Type == CombatantType.PlayerCharacter ? "Player Character" : "NPC")</span>
+            @if (combatant.Id == State.Current.ActiveCombatantId)
+            {
+                <span class="active-badge">Active</span>
+            }
+        </div>
+
+        <section class="hp-section">
+            <h3>HP</h3>
+            <div class="hp-bar large">
+                <div class="hp-bar-fill" style="width:@(HpPercent(combatant))%"></div>
+                <span class="hp-text">@combatant.CurrentHp / @combatant.MaxHp</span>
+            </div>
+            <label>
+                Max HP
+                <input type="number" value="@combatant.MaxHp" disabled="@combatant.MaxHpLocked" @onchange="e => SetMaxHp(combatant, e)" />
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" @bind="combatant.MaxHpLocked" /> Lock max HP
+            </label>
+            <div class="hp-delta">
+                <input @bind="_hpDelta" placeholder="e.g. -14 or +7" />
+                <button @onclick="() => ApplyHpDelta(combatant)">Apply</button>
+            </div>
+        </section>
+
+        <section class="initiative-section">
+            <h3>Initiative</h3>
+            <input @bind="combatant.InitiativeFormula" placeholder="e.g. 1d20+2" />
+            <button @onclick="() => RollInitiative(combatant)">Roll</button>
+            <input type="number" value="@combatant.Initiative" @onchange="e => SetInitiative(combatant, e)" placeholder="—" />
+        </section>
+
+        <section class="rolls-section">
+            <h3>Dice Rolls</h3>
+            <ul>
+                @foreach (var roll in combatant.NamedRolls)
+                {
+                    <li>
+                        <span>@roll.Name (@roll.Formula)</span>
+                        <button @onclick="() => RollNamed(combatant, roll.Id)">Roll</button>
+                    </li>
+                }
+            </ul>
+            <div class="add-roll">
+                <input @bind="_newRollName" placeholder="Name" />
+                <input @bind="_newRollFormula" placeholder="1d20+4" />
+                <button @onclick="() => AddRoll(combatant)">Add roll</button>
+            </div>
+        </section>
+
+        <section class="counters-section">
+            <h3>Counters</h3>
+            <ul>
+                @foreach (var counter in combatant.Counters)
+                {
+                    <li>
+                        <span>@counter.Name</span>
+                        <button @onclick="() => AdjustCounter(counter, -1)">-</button>
+                        <span>@counter.Current / @counter.Max</span>
+                        <button @onclick="() => AdjustCounter(counter, 1)">+</button>
+                        @if (counter.ShowBar)
+                        {
+                            <div class="hp-bar small"><div class="hp-bar-fill" style="width:@(CounterPercent(counter))%"></div></div>
+                        }
+                    </li>
+                }
+            </ul>
+            <div class="add-counter">
+                <input @bind="_newCounterName" placeholder="Name" />
+                <input type="number" @bind="_newCounterMax" placeholder="Max" />
+                <button @onclick="() => AddCounter(combatant)">Add counter</button>
+            </div>
+        </section>
+
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="error-text">@_error</div>
+        }
+    }
+</div>
+
+@code {
+    private string _hpDelta = "";
+    private string _newRollName = "";
+    private string _newRollFormula = "";
+    private string _newCounterName = "";
+    private int _newCounterMax = 3;
+    private string? _error;
+
+    private static int HpPercent(Combatant c) => c.MaxHp == 0 ? 0 : (int)Math.Round(100.0 * c.CurrentHp / c.MaxHp);
+    private static int CounterPercent(Counter c) => c.Max == 0 ? 0 : (int)Math.Round(100.0 * c.Current / c.Max);
+
+    private void SetMaxHp(Combatant combatant, ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var value) && value >= 0)
+        {
+            combatant.SetMaxHp(value);
+        }
+        State.NotifyChanged();
+    }
+
+    private void SetInitiative(Combatant combatant, ChangeEventArgs e)
+    {
+        var text = e.Value?.ToString();
+        combatant.SetInitiative(int.TryParse(text, out var value) ? value : null);
+        State.NotifyChanged();
+    }
+
+    private void ApplyHpDelta(Combatant combatant)
+    {
+        if (int.TryParse(_hpDelta.Trim(), out var delta))
+        {
+            EncounterService.ApplyHpDelta(State.Current, combatant.Id, delta);
+            _hpDelta = "";
+            _error = null;
+        }
+        else
+        {
+            _error = $"'{_hpDelta}' is not a valid HP delta (e.g. -14 or +7).";
+        }
+        State.NotifyChanged();
+    }
+
+    private void RollInitiative(Combatant combatant)
+    {
+        try
+        {
+            EncounterService.RollInitiative(State.Current, combatant.Id);
+            _error = null;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        State.NotifyChanged();
+    }
+
+    private void RollNamed(Combatant combatant, Guid rollId)
+    {
+        EncounterService.RollNamedRoll(State.Current, combatant.Id, rollId);
+        State.NotifyChanged();
+    }
+
+    private void AddRoll(Combatant combatant)
+    {
+        if (string.IsNullOrWhiteSpace(_newRollName))
+        {
+            return;
+        }
+
+        if (!DiceFormula.TryParse(_newRollFormula, out var formula))
+        {
+            _error = $"'{_newRollFormula}' is not a valid dice formula (e.g. 1d20+4).";
+            State.NotifyChanged();
+            return;
+        }
+
+        combatant.AddNamedRoll(_newRollName, formula!);
+        _newRollName = "";
+        _newRollFormula = "";
+        _error = null;
+        State.NotifyChanged();
+    }
+
+    private void AdjustCounter(Counter counter, int delta)
+    {
+        counter.Adjust(delta);
+        State.NotifyChanged();
+    }
+
+    private void AddCounter(Combatant combatant)
+    {
+        if (string.IsNullOrWhiteSpace(_newCounterName))
+        {
+            return;
+        }
+
+        combatant.AddCounter(_newCounterName, _newCounterMax, _newCounterMax);
+        _newCounterName = "";
+        _newCounterMax = 3;
+        State.NotifyChanged();
+    }
+}

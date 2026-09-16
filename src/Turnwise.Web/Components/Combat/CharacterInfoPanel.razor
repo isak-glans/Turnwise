@@ -1,0 +1,92 @@
+@inject EncounterSessionState State
+@inject CharacterTemplateService CharacterTemplateService
+@inject FileDownloadService FileDownload
+
+<div class="panel info-panel">
+    @if (State.SelectedCombatant is null)
+    {
+        <p class="empty-hint">No combatant selected.</p>
+    }
+    else
+    {
+        var combatant = State.SelectedCombatant;
+        <div class="portrait-large">
+            @if (!string.IsNullOrEmpty(combatant.PortraitBase64))
+            {
+                <img src="data:image/png;base64,@combatant.PortraitBase64" alt="@combatant.Name portrait" />
+            }
+            else
+            {
+                <div class="portrait-placeholder">No image</div>
+            }
+            <label class="file-button">
+                Change image
+                <InputFile OnChange="e => ChangePortrait(combatant, e)" accept="image/*" />
+            </label>
+        </div>
+
+        <label>
+            Type
+            <select @bind="combatant.Type">
+                <option value="@CombatantType.PlayerCharacter">Player Character</option>
+                <option value="@CombatantType.NonPlayerCharacter">NPC</option>
+            </select>
+        </label>
+
+        <label>
+            Description
+            <textarea @bind="combatant.Description" rows="5"></textarea>
+        </label>
+
+        <button @onclick="() => SaveAsTemplate(combatant)">Save as template</button>
+
+        <h3>Combat Log (this character)</h3>
+        <ul class="log-list">
+            @foreach (var entry in State.Current.GetLogForCombatant(combatant.Id).OrderByDescending(e => e.Timestamp))
+            {
+                <li>
+                    <span class="log-time">@entry.Timestamp.ToLocalTime().ToString("HH:mm:ss")</span>
+                    @entry.Message
+                </li>
+            }
+        </ul>
+
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="error-text">@_error</div>
+        }
+    }
+</div>
+
+@code {
+    private string? _error;
+
+    private async Task ChangePortrait(Combatant combatant, InputFileChangeEventArgs e)
+    {
+        try
+        {
+            const int maxBytes = 1_500_000;
+            using var stream = e.File.OpenReadStream(maxAllowedSize: maxBytes);
+            using var memory = new MemoryStream();
+            await stream.CopyToAsync(memory);
+            combatant.PortraitBase64 = Convert.ToBase64String(memory.ToArray());
+            _error = null;
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to load image: {ex.Message}";
+        }
+        State.NotifyChanged();
+    }
+
+    private async Task SaveAsTemplate(Combatant combatant)
+    {
+        using var stream = new MemoryStream();
+        await CharacterTemplateService.SaveAsTemplateAsync(combatant, stream);
+        var fileName = $"{Sanitize(combatant.Name)}.turnwise-character.json";
+        await FileDownload.DownloadAsync(fileName, "application/json", stream.ToArray());
+    }
+
+    private static string Sanitize(string name) =>
+        string.Concat(name.Where(c => !Path.GetInvalidFileNameChars().Contains(c))).Replace(' ', '-');
+}

@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Turnwise.Application/Turnwise.Application.csproj" />
+    <Project Path="src/Turnwise.Domain/Turnwise.Domain.csproj" />
+    <Project Path="src/Turnwise.Infrastructure/Turnwise.Infrastructure.csproj" />
+    <Project Path="src/Turnwise.Web/Turnwise.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Turnwise.Application.Tests/Turnwise.Application.Tests.csproj" />
+    <Project Path="tests/Turnwise.Domain.Tests/Turnwise.Domain.Tests.csproj" />
+    <Project Path="tests/Turnwise.Infrastructure.Tests/Turnwise.Infrastructure.Tests.csproj" />
+  </Folder>
+</Solution>
