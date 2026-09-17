@@ -10,6 +10,8 @@ namespace Turnwise.Web.State;
 public sealed class EncounterSessionState
 {
     private readonly HashSet<Guid> _bulkSelectedIds = [];
+    private readonly Dictionary<Guid, int> _lastSeenLogCounts = new();
+    private readonly Dictionary<Guid, bool> _logExpandedStates = new();
 
     public Encounter Current { get; private set; } = new();
     public Guid? SelectedCombatantId { get; private set; }
@@ -24,6 +26,8 @@ public sealed class EncounterSessionState
         Current = encounter;
         SelectedCombatantId = Current.Combatants.FirstOrDefault()?.Id;
         _bulkSelectedIds.Clear();
+        _lastSeenLogCounts.Clear();
+        _logExpandedStates.Clear();
         NotifyChanged();
     }
 
@@ -72,6 +76,45 @@ public sealed class EncounterSessionState
         {
             NotifyChanged();
         }
+    }
+
+    /// <summary>
+    /// Unread count for a combatant's per-character log, given the log is currently collapsed
+    /// for it. Lives here (not on the panel component) because the panel is recreated whenever
+    /// the selected combatant changes, but "what have I already seen for combatant X" needs to
+    /// survive that.
+    /// </summary>
+    public int UnreadLogCount(Guid combatantId, int currentTotal, bool isExpanded)
+    {
+        if (isExpanded)
+        {
+            _lastSeenLogCounts[combatantId] = currentTotal;
+            return 0;
+        }
+
+        if (!_lastSeenLogCounts.TryGetValue(combatantId, out var lastSeen))
+        {
+            lastSeen = currentTotal;
+            _lastSeenLogCounts[combatantId] = currentTotal;
+        }
+
+        return Math.Max(0, currentTotal - lastSeen);
+    }
+
+    /// <summary>
+    /// Whether a combatant's per-character combat log is expanded. Lives here rather than on the
+    /// panel (same reasoning as <see cref="UnreadLogCount"/>): if it were local component state,
+    /// switching away and back would silently re-expand it before the GM ever saw the unread
+    /// badge, defeating the point of having one. Defaults to expanded for a combatant not seen
+    /// before, per the "open by default" behavior.
+    /// </summary>
+    public bool IsLogExpanded(Guid combatantId) =>
+        !_logExpandedStates.TryGetValue(combatantId, out var expanded) || expanded;
+
+    public void SetLogExpanded(Guid combatantId, bool expanded)
+    {
+        _logExpandedStates[combatantId] = expanded;
+        NotifyChanged();
     }
 
     public void NotifyChanged() => Changed?.Invoke();

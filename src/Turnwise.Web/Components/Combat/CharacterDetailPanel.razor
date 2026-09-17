@@ -111,8 +111,69 @@
 
         <div class="section">
             <div class="section-header">
+                <span class="section-title"><span class="stat-icon"><i class="bi bi-stack"></i></span> Counters</span>
+                <button class="btn btn-sm" @onclick="() => _showAddCounter = !_showAddCounter"><i class="bi bi-plus-lg"></i> Add counter</button>
+            </div>
+            @if (combatant.Counters.Count > 1)
+            {
+                <input class="filter-input" @bind="_counterFilter" @bind:event="oninput" placeholder="Search counters..." />
+            }
+            <ul class="scrollable-list">
+                @foreach (var counter in FilterCounters(combatant, _counterFilter))
+                {
+                    var index = IndexOf(combatant.Counters, counter);
+                    <li class="counter-row" draggable="true"
+                        @ondragstart="() => _draggedCounterIndex = index"
+                        @ondragover:preventDefault
+                        @ondrop="() => DropCounter(combatant, index)">
+                        <span class="drag-handle" title="Drag to reorder"><i class="bi bi-grip-vertical"></i></span>
+                        <span class="stat-icon icon-accent"><i class="bi bi-hexagon-fill"></i></span>
+                        @if (_editingCounterId == counter.Id)
+                        {
+                            <input class="inline-edit-input" @bind="_editCounterName" placeholder="Name" />
+                            <input class="inline-edit-input narrow" type="number" @bind="_editCounterMax" placeholder="Max" />
+                            <button class="btn btn-sm btn-primary" @onclick="() => SaveCounterEdit(counter)">Save</button>
+                            <button class="btn btn-sm" @onclick="() => _editingCounterId = null">Cancel</button>
+                        }
+                        else
+                        {
+                            <span class="counter-name">@counter.Name</span>
+                            <button class="btn counter-step-btn" @onclick="() => AdjustCounter(counter, -1)"><i class="bi bi-dash"></i></button>
+                            <span class="counter-value">@counter.Current / @counter.Max</span>
+                            <button class="btn counter-step-btn" @onclick="() => AdjustCounter(counter, 1)"><i class="bi bi-plus"></i></button>
+                            <div class="menu-wrap">
+                                <button class="icon-btn-ghost" title="More" @onclick="() => _openCounterMenuId = _openCounterMenuId == counter.Id ? null : counter.Id">
+                                    <i class="bi bi-three-dots"></i>
+                                </button>
+                                @if (_openCounterMenuId == counter.Id)
+                                {
+                                    <div class="dropdown-menu row-menu">
+                                        <button class="dropdown-item" @onclick="() => StartEditCounter(counter)"><i class="bi bi-pencil"></i> Edit</button>
+                                        <button class="dropdown-item" @onclick="() => DuplicateCounter(combatant, counter.Id)"><i class="bi bi-copy"></i> Duplicate</button>
+                                        <button class="dropdown-item danger" @onclick="() => RemoveCounter(combatant, counter.Id)"><i class="bi bi-trash"></i> Delete</button>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </li>
+                }
+            </ul>
+            @if (_showAddCounter)
+            {
+                <div class="add-inline-form">
+                    <input @bind="_newCounterName" placeholder="e.g. AC, Ammo, Ki" />
+                    <input type="number" @bind="_newCounterMax" placeholder="Max" />
+                    <button class="btn btn-primary" @onclick="() => AddCounter(combatant)">Add</button>
+                </div>
+            }
+        </div>
+
+        <div class="section">
+            <div class="section-header">
                 <span class="section-title"><span class="stat-icon"><i class="bi bi-exclamation-triangle-fill"></i></span> Conditions</span>
-                <button class="btn btn-sm" @onclick="() => _showAddCondition = !_showAddCondition"><i class="bi bi-plus-lg"></i> Add condition</button>
+                <button class="btn btn-sm" @onclick="() => _showAddCondition = !_showAddCondition">
+                    <i class="bi @(_showAddCondition ? "bi-x-lg" : "bi-plus-lg")"></i> @(_showAddCondition ? "Close" : "Add condition")
+                </button>
             </div>
             @if (combatant.Conditions.Count > 0)
             {
@@ -126,10 +187,6 @@
                         </span>
                     }
                 </div>
-            }
-            else
-            {
-                <p class="empty-hint">No active conditions.</p>
             }
             @if (_showAddCondition)
             {
@@ -157,23 +214,48 @@
                 <span class="section-title"><span class="stat-icon"><i class="bi bi-dice-6"></i></span> Dice Rolls</span>
                 <button class="btn btn-sm" @onclick="() => _showAddRoll = !_showAddRoll"><i class="bi bi-plus-lg"></i> Add roll</button>
             </div>
+            @if (combatant.NamedRolls.Count > 1)
+            {
+                <input class="filter-input" @bind="_rollFilter" @bind:event="oninput" placeholder="Search rolls..." />
+            }
             <ul class="scrollable-list">
-                @for (var i = 0; i < combatant.NamedRolls.Count; i++)
+                @foreach (var roll in FilterRolls(combatant, _rollFilter))
                 {
-                    var index = i;
-                    var roll = combatant.NamedRolls[index];
+                    var index = IndexOf(combatant.NamedRolls, roll);
                     <li class="roll-row" draggable="true"
                         @ondragstart="() => _draggedRollIndex = index"
                         @ondragover:preventDefault
                         @ondrop="() => DropRoll(combatant, index)">
                         <span class="drag-handle" title="Drag to reorder"><i class="bi bi-grip-vertical"></i></span>
                         <span class="stat-icon icon-accent"><i class="bi bi-dice-6-fill"></i></span>
-                        <span class="roll-info">
-                            <span class="roll-name">@roll.Name</span>
-                        </span>
-                        <span class="formula-box">@roll.Formula</span>
-                        <button class="btn btn-sm" @onclick="() => RollNamed(combatant, roll.Id)">Roll</button>
-                        <button class="icon-btn-ghost" title="Remove roll" @onclick="() => RemoveRoll(combatant, roll.Id)"><i class="bi bi-trash"></i></button>
+                        @if (_editingRollId == roll.Id)
+                        {
+                            <input class="inline-edit-input" @bind="_editRollName" placeholder="Name" />
+                            <input class="inline-edit-input" @bind="_editRollFormula" placeholder="1d20+4" />
+                            <button class="btn btn-sm btn-primary" @onclick="() => SaveRollEdit(roll)">Save</button>
+                            <button class="btn btn-sm" @onclick="() => _editingRollId = null">Cancel</button>
+                        }
+                        else
+                        {
+                            <span class="roll-info">
+                                <span class="roll-name">@roll.Name</span>
+                            </span>
+                            <span class="formula-box">@roll.Formula</span>
+                            <button class="btn btn-sm" @onclick="() => RollNamed(combatant, roll.Id)">Roll</button>
+                            <div class="menu-wrap">
+                                <button class="icon-btn-ghost" title="More" @onclick="() => _openRollMenuId = _openRollMenuId == roll.Id ? null : roll.Id">
+                                    <i class="bi bi-three-dots"></i>
+                                </button>
+                                @if (_openRollMenuId == roll.Id)
+                                {
+                                    <div class="dropdown-menu row-menu">
+                                        <button class="dropdown-item" @onclick="() => StartEditRoll(roll)"><i class="bi bi-pencil"></i> Edit</button>
+                                        <button class="dropdown-item" @onclick="() => DuplicateRoll(combatant, roll.Id)"><i class="bi bi-copy"></i> Duplicate</button>
+                                        <button class="dropdown-item danger" @onclick="() => RemoveRoll(combatant, roll.Id)"><i class="bi bi-trash"></i> Delete</button>
+                                    </div>
+                                }
+                            </div>
+                        }
                     </li>
                 }
             </ul>
@@ -187,59 +269,30 @@
             }
         </div>
 
-        <div class="section">
-            <div class="section-header">
-                <span class="section-title"><span class="stat-icon"><i class="bi bi-stack"></i></span> Counters</span>
-                <button class="btn btn-sm" @onclick="() => _showAddCounter = !_showAddCounter"><i class="bi bi-plus-lg"></i> Add counter</button>
-            </div>
-            <ul class="scrollable-list">
-                @for (var i = 0; i < combatant.Counters.Count; i++)
-                {
-                    var index = i;
-                    var counter = combatant.Counters[index];
-                    <li class="counter-row" draggable="true"
-                        @ondragstart="() => _draggedCounterIndex = index"
-                        @ondragover:preventDefault
-                        @ondrop="() => DropCounter(combatant, index)">
-                        <span class="drag-handle" title="Drag to reorder"><i class="bi bi-grip-vertical"></i></span>
-                        <span class="stat-icon icon-accent"><i class="bi bi-hexagon-fill"></i></span>
-                        <span class="counter-name">@counter.Name</span>
-                        <button class="btn counter-step-btn" @onclick="() => AdjustCounter(counter, -1)"><i class="bi bi-dash"></i></button>
-                        <span class="counter-value">@counter.Current / @counter.Max</span>
-                        <button class="btn counter-step-btn" @onclick="() => AdjustCounter(counter, 1)"><i class="bi bi-plus"></i></button>
-                        <button class="icon-btn-ghost" title="Remove counter" @onclick="() => RemoveCounter(combatant, counter.Id)"><i class="bi bi-trash"></i></button>
-                    </li>
-                }
-            </ul>
-            @if (_showAddCounter)
-            {
-                <div class="add-inline-form">
-                    <input @bind="_newCounterName" placeholder="e.g. AC, Ammo, Ki" />
-                    <input type="number" @bind="_newCounterMax" placeholder="Max" />
-                    <button class="btn btn-primary" @onclick="() => AddCounter(combatant)">Add</button>
-                </div>
-            }
-        </div>
-
         <div class="field-block">
-            <button class="collapsible-header" @onclick="() => _logExpanded = !_logExpanded">
+            @{ var logExpanded = State.IsLogExpanded(combatant.Id); }
+            <button class="collapsible-header" @onclick="() => State.SetLogExpanded(combatant.Id, !logExpanded)">
                 <span><i class="bi bi-file-text"></i> Combat Log (@combatant.Name)</span>
                 <span class="header-right">
-                    @{ var unread = UnreadLogCount(combatant); }
-                    @if (!_logExpanded && unread > 0)
+                    @{ var unread = State.UnreadLogCount(combatant.Id, State.Current.GetLogForCombatant(combatant.Id).Count(), logExpanded); }
+                    @if (!logExpanded && unread > 0)
                     {
                         <span class="unread-badge">@unread</span>
                     }
-                    <i class="bi bi-chevron-down chevron @(_logExpanded ? "open" : "")"></i>
+                    <i class="bi bi-chevron-down chevron @(logExpanded ? "open" : "")"></i>
                 </span>
             </button>
-            @if (_logExpanded)
+            @if (logExpanded)
             {
                 <ul class="log-list">
                     @foreach (var entry in State.Current.GetLogForCombatant(combatant.Id).OrderByDescending(e => e.Timestamp))
                     {
                         <li @key="entry.Id">
-                            <span class="log-time">@entry.Timestamp.ToLocalTime().ToString("HH:mm:ss")</span>
+                            <span class="log-time">@entry.Timestamp.ToLocalTime().ToString("HH:mm")</span>
+                            @if (!string.IsNullOrEmpty(entry.Result))
+                            {
+                                <strong class="log-result">@entry.Result</strong>
+                            }
                             @entry.Message
                         </li>
                     }
@@ -260,18 +313,48 @@
     private bool _showAddCounter;
     private bool _showAddCondition;
     private bool _showMenu;
-    private bool _logExpanded = true;
     private string _newRollName = "";
     private string _newRollFormula = "";
     private string _newCounterName = "";
     private int _newCounterMax = 3;
     private int? _draggedRollIndex;
     private int? _draggedCounterIndex;
-    private readonly Dictionary<Guid, int> _lastSeenLogCounts = new();
+    private string _rollFilter = "";
+    private string _counterFilter = "";
+    private Guid? _openRollMenuId;
+    private Guid? _openCounterMenuId;
+    private Guid? _editingRollId;
+    private string _editRollName = "";
+    private string _editRollFormula = "";
+    private Guid? _editingCounterId;
+    private string _editCounterName = "";
+    private int _editCounterMax;
     private string? _error;
 
     private static bool HasPortrait(Combatant c) => !string.IsNullOrEmpty(c.PortraitBase64);
     private static int HpPercent(Combatant c) => c.MaxHp == 0 ? 0 : (int)Math.Round(100.0 * c.CurrentHp / c.MaxHp);
+
+    private static int IndexOf<T>(IReadOnlyList<T> list, T item)
+    {
+        for (var i = 0; i < list.Count; i++)
+        {
+            if (Equals(list[i], item))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static IEnumerable<NamedRoll> FilterRolls(Combatant combatant, string filter) =>
+        string.IsNullOrWhiteSpace(filter)
+            ? combatant.NamedRolls
+            : combatant.NamedRolls.Where(r => r.Name.Contains(filter, StringComparison.OrdinalIgnoreCase));
+
+    private static IEnumerable<Counter> FilterCounters(Combatant combatant, string filter) =>
+        string.IsNullOrWhiteSpace(filter)
+            ? combatant.Counters
+            : combatant.Counters.Where(c => c.Name.Contains(filter, StringComparison.OrdinalIgnoreCase));
 
     private void RenameCombatant(Combatant combatant, ChangeEventArgs e)
     {
@@ -363,6 +446,7 @@
     private void RemoveRoll(Combatant combatant, Guid rollId)
     {
         combatant.RemoveNamedRoll(rollId);
+        _openRollMenuId = null;
         State.NotifyChanged();
     }
 
@@ -398,6 +482,42 @@
         State.NotifyChanged();
     }
 
+    private void StartEditRoll(NamedRoll roll)
+    {
+        _editingRollId = roll.Id;
+        _editRollName = roll.Name;
+        _editRollFormula = roll.Formula.ToString();
+        _openRollMenuId = null;
+    }
+
+    private void SaveRollEdit(NamedRoll roll)
+    {
+        if (string.IsNullOrWhiteSpace(_editRollName))
+        {
+            return;
+        }
+
+        if (!DiceFormula.TryParse(_editRollFormula, out var formula))
+        {
+            _error = $"'{_editRollFormula}' is not a valid dice formula (e.g. 1d20+4).";
+            State.NotifyChanged();
+            return;
+        }
+
+        roll.Name = _editRollName.Trim();
+        roll.Formula = formula!;
+        _editingRollId = null;
+        _error = null;
+        State.NotifyChanged();
+    }
+
+    private void DuplicateRoll(Combatant combatant, Guid rollId)
+    {
+        combatant.DuplicateNamedRoll(rollId);
+        _openRollMenuId = null;
+        State.NotifyChanged();
+    }
+
     private void AdjustCounter(Counter counter, int delta)
     {
         counter.Adjust(delta);
@@ -407,6 +527,7 @@
     private void RemoveCounter(Combatant combatant, Guid counterId)
     {
         combatant.RemoveCounter(counterId);
+        _openCounterMenuId = null;
         State.NotifyChanged();
     }
 
@@ -434,6 +555,34 @@
         State.NotifyChanged();
     }
 
+    private void StartEditCounter(Counter counter)
+    {
+        _editingCounterId = counter.Id;
+        _editCounterName = counter.Name;
+        _editCounterMax = counter.Max;
+        _openCounterMenuId = null;
+    }
+
+    private void SaveCounterEdit(Counter counter)
+    {
+        if (string.IsNullOrWhiteSpace(_editCounterName) || _editCounterMax < 0)
+        {
+            return;
+        }
+
+        counter.Name = _editCounterName.Trim();
+        counter.SetMax(_editCounterMax);
+        _editingCounterId = null;
+        State.NotifyChanged();
+    }
+
+    private void DuplicateCounter(Combatant combatant, Guid counterId)
+    {
+        combatant.DuplicateCounter(counterId);
+        _openCounterMenuId = null;
+        State.NotifyChanged();
+    }
+
     private void RemoveCondition(Combatant combatant, Guid conditionId)
     {
         combatant.RemoveCondition(conditionId);
@@ -450,24 +599,6 @@
     {
         combatant.AddCondition(name);
         State.NotifyChanged();
-    }
-
-    private int UnreadLogCount(Combatant combatant)
-    {
-        var total = State.Current.GetLogForCombatant(combatant.Id).Count();
-        if (_logExpanded)
-        {
-            _lastSeenLogCounts[combatant.Id] = total;
-            return 0;
-        }
-
-        if (!_lastSeenLogCounts.TryGetValue(combatant.Id, out var lastSeen))
-        {
-            lastSeen = total;
-            _lastSeenLogCounts[combatant.Id] = total;
-        }
-
-        return Math.Max(0, total - lastSeen);
     }
 
     private void DuplicateCombatant(Combatant combatant)

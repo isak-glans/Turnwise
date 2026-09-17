@@ -15,7 +15,10 @@ public sealed class CombatLogEntry
     public Guid? CombatantId { get; }
     public string Message { get; }
 
-    public CombatLogEntry(CombatLogEntryType type, string message, Guid? combatantId, DateTimeOffset? timestamp = null, Guid? id = null)
+    /// <summary>The key number this entry is about (a rolled total, or an applied HP delta) - shown emphasized in the UI, separate from the descriptive <see cref="Message"/>.</summary>
+    public string? Result { get; }
+
+    public CombatLogEntry(CombatLogEntryType type, string message, Guid? combatantId, DateTimeOffset? timestamp = null, Guid? id = null, string? result = null)
     {
         if (string.IsNullOrWhiteSpace(message))
         {
@@ -27,5 +30,6 @@ public sealed class CombatLogEntry
         CombatantId = combatantId;
         Message = message;
         Timestamp = timestamp ?? DateTimeOffset.UtcNow;
+        Result = result;
     }
 }

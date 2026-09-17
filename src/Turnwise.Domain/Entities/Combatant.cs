@@ -138,6 +138,21 @@ public sealed class Combatant
     /// <summary>Manual drag-and-drop reordering of the dice roll list.</summary>
     public void ReorderNamedRoll(int fromIndex, int toIndex) => Move(_namedRolls, fromIndex, toIndex);
 
+    /// <summary>Adds a copy of the given roll right after it in the list.</summary>
+    public NamedRoll DuplicateNamedRoll(Guid rollId)
+    {
+        var index = _namedRolls.FindIndex(r => r.Id == rollId);
+        if (index < 0)
+        {
+            throw new KeyNotFoundException($"Named roll {rollId} not found.");
+        }
+
+        var original = _namedRolls[index];
+        var clone = new NamedRoll(original.Name, original.Formula);
+        _namedRolls.Insert(index + 1, clone);
+        return clone;
+    }
+
     public Counter AddCounter(string name, int current, int max, bool showBar = true, Guid? id = null)
     {
         var counter = new Counter(name, current, max, showBar, id);
@@ -149,6 +164,21 @@ public sealed class Combatant
 
     /// <summary>Manual drag-and-drop reordering of the counter list.</summary>
     public void ReorderCounter(int fromIndex, int toIndex) => Move(_counters, fromIndex, toIndex);
+
+    /// <summary>Adds a copy of the given counter right after it in the list.</summary>
+    public Counter DuplicateCounter(Guid counterId)
+    {
+        var index = _counters.FindIndex(c => c.Id == counterId);
+        if (index < 0)
+        {
+            throw new KeyNotFoundException($"Counter {counterId} not found.");
+        }
+
+        var original = _counters[index];
+        var clone = new Counter(original.Name, original.Current, original.Max, original.ShowBar);
+        _counters.Insert(index + 1, clone);
+        return clone;
+    }
 
     private static void Move<T>(List<T> list, int fromIndex, int toIndex)
     {

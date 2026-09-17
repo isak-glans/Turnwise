@@ -948,7 +948,28 @@ button:hover {
 .scrollable-list {
     max-height: 15rem;
     overflow-y: auto;
+    overflow-x: visible;
     padding-right: 0.2rem;
+}
+
+.filter-input {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 0.5rem;
+}
+
+.inline-edit-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.inline-edit-input.narrow {
+    flex: none;
+    width: 4.5rem;
+}
+
+.row-menu {
+    z-index: 30;
 }
 
 .drag-handle {
@@ -1253,6 +1274,12 @@ button:hover {
 .log-time {
     color: var(--tw-text-faint);
     margin-right: 0.4rem;
+}
+
+.log-result {
+    color: var(--tw-text);
+    font-weight: 700;
+    margin-right: 0.3rem;
 }
 
 .log-type {

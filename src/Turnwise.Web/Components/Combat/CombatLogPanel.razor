@@ -11,9 +11,13 @@
         <ul class="log-list">
             @foreach (var entry in State.Current.Log.OrderByDescending(e => e.Timestamp))
             {
-                <li>
-                    <span class="log-time">@entry.Timestamp.ToLocalTime().ToString("HH:mm:ss")</span>
+                <li @key="entry.Id">
+                    <span class="log-time">@entry.Timestamp.ToLocalTime().ToString("HH:mm")</span>
                     <span class="log-type">@FormatType(entry.Type)</span>
+                    @if (!string.IsNullOrEmpty(entry.Result))
+                    {
+                        <strong class="log-result">@entry.Result</strong>
+                    }
                     @entry.Message
                 </li>
             }

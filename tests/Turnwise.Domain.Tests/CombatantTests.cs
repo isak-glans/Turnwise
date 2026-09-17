@@ -109,4 +109,33 @@ public class CombatantTests
 
         Assert.Equal(["C", "A", "B"], combatant.Counters.Select(c => c.Name));
     }
+
+    [Fact]
+    public void DuplicateNamedRoll_InsertsCopyRightAfterOriginal()
+    {
+        var combatant = new Combatant("Fighter", 20);
+        combatant.AddNamedRoll("Longsword", Turnwise.Domain.ValueObjects.DiceFormula.Parse("1d20+4"));
+        combatant.AddNamedRoll("Dagger", Turnwise.Domain.ValueObjects.DiceFormula.Parse("1d20+2"));
+
+        var clone = combatant.DuplicateNamedRoll(combatant.NamedRolls[0].Id);
+
+        Assert.Equal(["Longsword", "Longsword", "Dagger"], combatant.NamedRolls.Select(r => r.Name));
+        Assert.NotEqual(combatant.NamedRolls[0].Id, clone.Id);
+        Assert.Equal(combatant.NamedRolls[0].Formula, clone.Formula);
+    }
+
+    [Fact]
+    public void DuplicateCounter_InsertsCopyRightAfterOriginal()
+    {
+        var combatant = new Combatant("Fighter", 20);
+        combatant.AddCounter("Ki", 3, 4);
+        combatant.AddCounter("Ammo", 10, 20);
+
+        var clone = combatant.DuplicateCounter(combatant.Counters[0].Id);
+
+        Assert.Equal(["Ki", "Ki", "Ammo"], combatant.Counters.Select(c => c.Name));
+        Assert.NotEqual(combatant.Counters[0].Id, clone.Id);
+        Assert.Equal(3, clone.Current);
+        Assert.Equal(4, clone.Max);
+    }
 }

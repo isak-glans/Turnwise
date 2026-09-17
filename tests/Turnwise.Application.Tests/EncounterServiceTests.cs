@@ -26,6 +26,7 @@ public class EncounterServiceTests
         var entry = Assert.Single(encounter.Log);
         Assert.Equal(CombatLogEntryType.HpChange, entry.Type);
         Assert.Equal(combatant.Id, entry.CombatantId);
+        Assert.Equal("-7", entry.Result);
     }
 
     [Fact]
@@ -44,6 +45,7 @@ public class EncounterServiceTests
         Assert.Equal(17, result.Total);
         Assert.Equal(17, combatant.Initiative);
         Assert.Contains(encounter.Log, e => e.Type == CombatLogEntryType.InitiativeChange);
+        Assert.Equal("17", Assert.Single(encounter.Log).Result);
     }
 
     [Fact]
@@ -106,6 +108,7 @@ public class EncounterServiceTests
 
         Assert.Equal(15, a.CurrentHp);
         Assert.Equal(15, b.CurrentHp);
+        Assert.All(encounter.Log, e => Assert.Equal("-5", e.Result));
     }
 
     [Fact]
@@ -173,5 +176,6 @@ public class EncounterServiceTests
         Assert.Equal(8, result.Total); // 4 + 4
         var entry = Assert.Single(encounter.Log);
         Assert.Equal(CombatLogEntryType.DiceRoll, entry.Type);
+        Assert.Equal("8", entry.Result);
     }
 }

@@ -7,6 +7,7 @@ public sealed class CombatLogEntryDto
     public string Type { get; set; } = string.Empty;
     public Guid? CombatantId { get; set; }
     public string Message { get; set; } = string.Empty;
+    public string? Result { get; set; }
 }
 
 /// <summary>Root object for a saved encounter (*.turnwise-encounter.json): round, turn order and every combatant's full sheet.</summary>

@@ -57,8 +57,9 @@ public sealed class EncounterService(DiceRollingService diceRoller)
         var applied = combatant.ApplyHpDelta(delta);
 
         var direction = applied < 0 ? "damage" : "healing";
-        var message = $"{combatant.Name}: {(applied >= 0 ? "+" : "")}{applied} HP ({direction}) -> {combatant.CurrentHp}/{combatant.MaxHp}";
-        encounter.AddLogEntry(new CombatLogEntry(CombatLogEntryType.HpChange, message, combatant.Id));
+        var sign = applied >= 0 ? "+" : "";
+        var message = $"{combatant.Name}: {sign}{applied} HP ({direction}) -> {combatant.CurrentHp}/{combatant.MaxHp}";
+        encounter.AddLogEntry(new CombatLogEntry(CombatLogEntryType.HpChange, message, combatant.Id, result: $"{sign}{applied}"));
 
         return applied;
     }
@@ -94,7 +95,7 @@ public sealed class EncounterService(DiceRollingService diceRoller)
 
             combatant.ApplyHpDelta(-roll.Total);
             var message = $"{combatant.Name}: {roll} damage -> {combatant.CurrentHp}/{combatant.MaxHp}";
-            encounter.AddLogEntry(new CombatLogEntry(CombatLogEntryType.HpChange, message, combatant.Id));
+            encounter.AddLogEntry(new CombatLogEntry(CombatLogEntryType.HpChange, message, combatant.Id, result: $"-{roll.Total}"));
         }
 
         return results;
@@ -118,7 +119,8 @@ public sealed class EncounterService(DiceRollingService diceRoller)
         encounter.AddLogEntry(new CombatLogEntry(
             CombatLogEntryType.InitiativeChange,
             $"{combatant.Name}: initiative {result} = {result.Total}",
-            combatant.Id));
+            combatant.Id,
+            result: result.Total.ToString()));
 
         return result;
     }
@@ -151,7 +153,8 @@ public sealed class EncounterService(DiceRollingService diceRoller)
         encounter.AddLogEntry(new CombatLogEntry(
             CombatLogEntryType.DiceRoll,
             $"{combatant.Name}: {namedRoll.Name} ({result}) = {result.Total}",
-            combatant.Id));
+            combatant.Id,
+            result: result.Total.ToString()));
 
         return result;
     }

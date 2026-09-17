@@ -39,7 +39,7 @@ public sealed class JsonEncounterStore : IEncounterStore
                 throw new FormatException($"Unknown combat log entry type '{logDto.Type}'.");
             }
 
-            encounter.AddLogEntry(new CombatLogEntry(logType, logDto.Message, logDto.CombatantId, logDto.Timestamp, logDto.Id));
+            encounter.AddLogEntry(new CombatLogEntry(logType, logDto.Message, logDto.CombatantId, logDto.Timestamp, logDto.Id, logDto.Result));
         }
 
         return encounter;
@@ -72,7 +72,8 @@ public sealed class JsonEncounterStore : IEncounterStore
                 Timestamp = e.Timestamp,
                 Type = e.Type.ToString(),
                 CombatantId = e.CombatantId,
-                Message = e.Message
+                Message = e.Message,
+                Result = e.Result
             }).ToList()
         };
 
