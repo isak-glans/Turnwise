@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Turnwise.Domain.ValueObjects;
 
 namespace Turnwise.Domain.Entities;
@@ -5,8 +6,20 @@ namespace Turnwise.Domain.Entities;
 /// <summary>A reusable, named dice roll belonging to a combatant (e.g. "Longsword hit" -> 1d20+4).</summary>
 public sealed class NamedRoll
 {
+    public const int MaxNameLength = 100;
+
+    private string _name;
+
     public Guid Id { get; }
-    public string Name { get; set; }
+
+    /// <summary>Silently truncated to <see cref="MaxNameLength"/> rather than rejected, since this can be set on every keystroke while editing.</summary>
+    public string Name
+    {
+        get => _name;
+        [MemberNotNull(nameof(_name))]
+        set => _name = Truncate(value);
+    }
+
     public DiceFormula Formula { get; set; }
 
     public NamedRoll(string name, DiceFormula formula, Guid? id = null)
@@ -19,5 +32,11 @@ public sealed class NamedRoll
         Id = id ?? Guid.NewGuid();
         Name = name;
         Formula = formula;
+    }
+
+    private static string Truncate(string? value)
+    {
+        var text = value ?? "";
+        return text.Length > MaxNameLength ? text[..MaxNameLength] : text;
     }
 }

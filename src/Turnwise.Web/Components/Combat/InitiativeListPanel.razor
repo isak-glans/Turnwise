@@ -94,7 +94,7 @@
     {
         <div class="add-combatant-form">
             <div class="add-combatant-row">
-                <input @bind="_newName" placeholder="Name" />
+                <input @bind="_newName" placeholder="Name" maxlength="@Combatant.MaxNameLength" />
                 <input type="number" @bind="_newMaxHp" min="0" placeholder="Max HP" />
             </div>
             <div class="add-combatant-row">

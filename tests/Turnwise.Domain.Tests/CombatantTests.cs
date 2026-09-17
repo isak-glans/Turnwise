@@ -5,6 +5,52 @@ namespace Turnwise.Domain.Tests;
 
 public class CombatantTests
 {
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void Constructor_RejectsEmptyOrWhitespaceName(string? name)
+    {
+        Assert.Throws<ArgumentException>(() => new Combatant(name!, 10));
+    }
+
+    [Fact]
+    public void Constructor_RejectsNegativeMaxHp()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new Combatant("Goblin", -1));
+    }
+
+    [Fact]
+    public void SetMaxHp_RejectsNegativeValue()
+    {
+        var combatant = new Combatant("Goblin", 10);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => combatant.SetMaxHp(-1));
+    }
+
+    [Fact]
+    public void ApplyHpDelta_ExtremePositiveDeltaDoesNotOverflowPastMaxHp()
+    {
+        var combatant = new Combatant("Goblin", 10);
+        combatant.ApplyHpDelta(-7); // leave room to heal, so the clamp is actually exercised
+
+        var applied = combatant.ApplyHpDelta(int.MaxValue);
+
+        Assert.Equal(10, combatant.CurrentHp);
+        Assert.Equal(7, applied);
+    }
+
+    [Fact]
+    public void ApplyHpDelta_ExtremeNegativeDeltaDoesNotOverflowPastZero()
+    {
+        var combatant = new Combatant("Goblin", 10);
+
+        var applied = combatant.ApplyHpDelta(int.MinValue);
+
+        Assert.Equal(0, combatant.CurrentHp);
+        Assert.Equal(-10, applied);
+    }
+
     [Fact]
     public void ApplyHpDelta_ClampsAtZero()
     {
@@ -72,6 +118,24 @@ public class CombatantTests
     }
 
     [Fact]
+    public void Name_LongerThanMaxIsSilentlyTruncated()
+    {
+        var combatant = new Combatant("Goblin", 10);
+
+        combatant.Name = new string('x', Combatant.MaxNameLength + 50);
+
+        Assert.Equal(Combatant.MaxNameLength, combatant.Name.Length);
+    }
+
+    [Fact]
+    public void Constructor_NameLongerThanMaxIsSilentlyTruncated()
+    {
+        var combatant = new Combatant(new string('x', Combatant.MaxNameLength + 50), 10);
+
+        Assert.Equal(Combatant.MaxNameLength, combatant.Name.Length);
+    }
+
+    [Fact]
     public void SetArmorClass_DefaultsToNullAndCanBeClearedAgain()
     {
         var combatant = new Combatant("Goblin", 10);
@@ -85,6 +149,14 @@ public class CombatantTests
     }
 
     [Fact]
+    public void SetArmorClass_RejectsNegativeValue()
+    {
+        var combatant = new Combatant("Goblin", 10);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => combatant.SetArmorClass(-1));
+    }
+
+    [Fact]
     public void Duplicate_CopiesArmorClass()
     {
         var original = new Combatant("Goblin", 10);
@@ -93,6 +165,23 @@ public class CombatantTests
         var clone = original.Duplicate();
 
         Assert.Equal(13, clone.ArmorClass);
+    }
+
+    [Fact]
+    public void AddCounter_RejectsNegativeMax()
+    {
+        var combatant = new Combatant("Fighter", 20);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => combatant.AddCounter("Ki", -1, -1));
+    }
+
+    [Fact]
+    public void AddNamedRoll_RejectsEmptyName()
+    {
+        var combatant = new Combatant("Fighter", 20);
+        var formula = Turnwise.Domain.ValueObjects.DiceFormula.Parse("1d6");
+
+        Assert.Throws<ArgumentException>(() => combatant.AddNamedRoll("", formula));
     }
 
     [Fact]

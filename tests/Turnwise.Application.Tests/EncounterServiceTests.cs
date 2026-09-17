@@ -30,6 +30,21 @@ public class EncounterServiceTests
     }
 
     [Fact]
+    public void ApplyHpDelta_ExtremePositiveDeltaDoesNotOverflowPastMaxHp()
+    {
+        var service = MakeService();
+        var encounter = new Encounter();
+        var combatant = new Combatant("Goblin", 20);
+        encounter.AddCombatant(combatant);
+        service.ApplyHpDelta(encounter, combatant.Id, -12); // leave room to heal, so the clamp is actually exercised
+
+        var applied = service.ApplyHpDelta(encounter, combatant.Id, int.MaxValue);
+
+        Assert.Equal(20, combatant.CurrentHp);
+        Assert.Equal(12, applied);
+    }
+
+    [Fact]
     public void RollInitiative_SetsInitiativeFromFormulaAndLogs()
     {
         var service = MakeService(15);
@@ -54,6 +69,20 @@ public class EncounterServiceTests
         var service = MakeService();
         var encounter = new Encounter();
         var combatant = new Combatant("Fighter", 20);
+        encounter.AddCombatant(combatant);
+
+        Assert.Throws<InvalidOperationException>(() => service.RollInitiative(encounter, combatant.Id));
+    }
+
+    [Fact]
+    public void RollInitiative_WithOversizedFormula_ThrowsInvalidOperationNotOverflow()
+    {
+        var service = MakeService();
+        var encounter = new Encounter();
+        var combatant = new Combatant("Fighter", 20)
+        {
+            InitiativeFormula = "1d20+99999999999999999999"
+        };
         encounter.AddCombatant(combatant);
 
         Assert.Throws<InvalidOperationException>(() => service.RollInitiative(encounter, combatant.Id));

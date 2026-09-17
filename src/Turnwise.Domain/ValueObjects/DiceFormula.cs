@@ -19,10 +19,21 @@ public sealed partial record DiceFormula
         Modifier = modifier;
     }
 
+    /// <summary>Notation longer than this can't describe a valid formula (bounds are far smaller) - rejected up front so we never even try to parse it. Also usable as an input's HTML maxlength.</summary>
+    public const int MaxNotationLength = 20;
+
+    private const int MinModifier = -999;
+    private const int MaxModifier = 999;
+
+    /// <summary>
+    /// Never throws, regardless of input - including on digit runs too large for <see cref="int"/>
+    /// (e.g. a pasted "1d6+99999999999999"), which would otherwise surface as an unhandled
+    /// <see cref="OverflowException"/> to every caller that relies on the "Try" contract.
+    /// </summary>
     public static bool TryParse(string? notation, out DiceFormula? formula)
     {
         formula = null;
-        if (string.IsNullOrWhiteSpace(notation))
+        if (string.IsNullOrWhiteSpace(notation) || notation.Trim().Length > MaxNotationLength)
         {
             return false;
         }
@@ -33,19 +44,27 @@ public sealed partial record DiceFormula
             return false;
         }
 
-        var diceCount = int.Parse(match.Groups["count"].Value);
-        var dieSize = int.Parse(match.Groups["size"].Value);
+        if (!int.TryParse(match.Groups["count"].Value, out var diceCount) ||
+            !int.TryParse(match.Groups["size"].Value, out var dieSize))
+        {
+            return false;
+        }
+
         var modifier = 0;
         if (match.Groups["modSign"].Success && match.Groups["modValue"].Success)
         {
-            modifier = int.Parse(match.Groups["modValue"].Value);
+            if (!int.TryParse(match.Groups["modValue"].Value, out modifier))
+            {
+                return false;
+            }
+
             if (match.Groups["modSign"].Value == "-")
             {
                 modifier = -modifier;
             }
         }
 
-        if (diceCount is < 1 or > 100 || dieSize is < 2 or > 1000)
+        if (diceCount is < 1 or > 100 || dieSize is < 2 or > 1000 || modifier is < MinModifier or > MaxModifier)
         {
             return false;
         }

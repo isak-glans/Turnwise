@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Turnwise.Domain.ValueObjects;
 
 namespace Turnwise.Domain.Entities;
@@ -8,12 +9,24 @@ namespace Turnwise.Domain.Entities;
 /// </summary>
 public sealed class Combatant
 {
+    /// <summary>Keeps the name usable as part of a save-file name - well under filesystem path-component limits.</summary>
+    public const int MaxNameLength = 100;
+
     private readonly List<NamedRoll> _namedRolls = [];
     private readonly List<Counter> _counters = [];
     private readonly List<Condition> _conditions = [];
+    private string _name;
 
     public Guid Id { get; }
-    public string Name { get; set; }
+
+    /// <summary>Silently truncated to <see cref="MaxNameLength"/> rather than rejected, since this is set on every keystroke while the GM is typing.</summary>
+    public string Name
+    {
+        get => _name;
+        [MemberNotNull(nameof(_name))]
+        set => _name = Truncate(value);
+    }
+
     public string? PortraitBase64 { get; set; }
 
     public int MaxHp { get; private set; }
@@ -49,6 +62,12 @@ public sealed class Combatant
         CurrentHp = maxHp;
         MaxHpLocked = true;
         InitiativeLocked = true;
+    }
+
+    private static string Truncate(string? value)
+    {
+        var text = value ?? "";
+        return text.Length > MaxNameLength ? text[..MaxNameLength] : text;
     }
 
     /// <summary>Reconstructs a combatant with exact saved state (used when loading from a file). Named rolls, counters and conditions are added separately.</summary>
@@ -109,7 +128,11 @@ public sealed class Combatant
     public int ApplyHpDelta(int delta)
     {
         var before = CurrentHp;
-        CurrentHp = Math.Clamp(CurrentHp + delta, 0, MaxHp);
+        // Widen to long first: CurrentHp + delta can overflow int when delta comes from
+        // unbounded free-text input (e.g. int.MaxValue), which would otherwise wrap around
+        // to a huge negative number before Clamp ever sees it.
+        var target = (long)CurrentHp + delta;
+        CurrentHp = (int)Math.Clamp(target, 0, MaxHp);
         return CurrentHp - before;
     }
 
@@ -126,7 +149,15 @@ public sealed class Combatant
 
     public void SetInitiative(int? value) => Initiative = value;
 
-    public void SetArmorClass(int? value) => ArmorClass = value;
+    public void SetArmorClass(int? value)
+    {
+        if (value is { } ac && ac < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(value), "Armor Class cannot be negative.");
+        }
+
+        ArmorClass = value;
+    }
 
     /// <summary>Clears initiative. Used when importing a saved character template into a new encounter.</summary>
     public void ClearInitiative() => Initiative = null;

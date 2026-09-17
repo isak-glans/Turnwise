@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Turnwise.Domain.Entities;
 
 /// <summary>
@@ -6,11 +8,23 @@ namespace Turnwise.Domain.Entities;
 /// </summary>
 public sealed class Encounter
 {
+    /// <summary>Keeps the name usable as a save-file name - well under filesystem path-component limits even after <see cref="Guid"/>/suffix decoration.</summary>
+    public const int MaxNameLength = 100;
+
     private readonly List<Combatant> _combatants = [];
     private readonly List<CombatLogEntry> _log = [];
+    private string _name;
 
     public Guid Id { get; }
-    public string Name { get; set; }
+
+    /// <summary>Silently truncated to <see cref="MaxNameLength"/> rather than rejected, since this is set on every keystroke while the GM is typing.</summary>
+    public string Name
+    {
+        get => _name;
+        [MemberNotNull(nameof(_name))]
+        set => _name = Truncate(value);
+    }
+
     public int Round { get; private set; } = 1;
     public Guid? ActiveCombatantId { get; private set; }
 
@@ -23,6 +37,12 @@ public sealed class Encounter
     {
         Id = id ?? Guid.NewGuid();
         Name = name;
+    }
+
+    private static string Truncate(string? value)
+    {
+        var text = value ?? "";
+        return text.Length > MaxNameLength ? text[..MaxNameLength] : text;
     }
 
     /// <summary>Reconstructs an encounter with exact saved state (used when loading from a file). Combatants and log entries are added separately.</summary>
