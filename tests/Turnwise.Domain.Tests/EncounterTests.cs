@@ -17,6 +17,24 @@ public class EncounterTests
     }
 
     [Fact]
+    public void Name_LongerThanMaxIsSilentlyTruncated()
+    {
+        var encounter = new Encounter();
+
+        encounter.Name = new string('x', Encounter.MaxNameLength + 50);
+
+        Assert.Equal(Encounter.MaxNameLength, encounter.Name.Length);
+    }
+
+    [Fact]
+    public void Constructor_NameLongerThanMaxIsSilentlyTruncated()
+    {
+        var encounter = new Encounter(new string('x', Encounter.MaxNameLength + 50));
+
+        Assert.Equal(Encounter.MaxNameLength, encounter.Name.Length);
+    }
+
+    [Fact]
     public void NextTurn_AdvancesThroughOrderAndWrapsRound()
     {
         var encounter = new Encounter();

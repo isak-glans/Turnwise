@@ -60,6 +60,20 @@ public class EncounterServiceTests
     }
 
     [Fact]
+    public void RollInitiative_WithOversizedFormula_ThrowsInvalidOperationNotOverflow()
+    {
+        var service = MakeService();
+        var encounter = new Encounter();
+        var combatant = new Combatant("Fighter", 20)
+        {
+            InitiativeFormula = "1d20+99999999999999999999"
+        };
+        encounter.AddCombatant(combatant);
+
+        Assert.Throws<InvalidOperationException>(() => service.RollInitiative(encounter, combatant.Id));
+    }
+
+    [Fact]
     public void DuplicateCombatant_InsertsCloneRightAfterOriginal()
     {
         var service = MakeService();

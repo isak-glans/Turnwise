@@ -15,7 +15,7 @@
                 <input class="bulk-narrow-input" @bind="_flatDelta" placeholder="e.g. -10 or +5" />
                 <button class="btn btn-sm" @onclick="ApplyFlat">Apply</button>
                 <span class="bulk-action-sep">or</span>
-                <input class="bulk-narrow-input" @bind="_damageFormula" placeholder="2d6" />
+                <input class="bulk-narrow-input" @bind="_damageFormula" placeholder="2d6" maxlength="@DiceFormula.MaxNotationLength" />
                 <button class="btn btn-sm" title="One roll, same damage to everyone" @onclick="() => RollDamage(sharedRoll: true)">
                     <i class="bi bi-dice-6-fill"></i> Roll (shared)
                 </button>

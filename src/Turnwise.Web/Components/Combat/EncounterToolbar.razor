@@ -10,7 +10,7 @@
     </div>
 
     <div class="encounter-name-field">
-        <input class="encounter-name-input" @bind="State.Current.Name" @bind:event="oninput" placeholder="Encounter name" />
+        <input class="encounter-name-input" @bind="State.Current.Name" @bind:event="oninput" placeholder="Encounter name" maxlength="@Encounter.MaxNameLength" />
         <i class="bi bi-pencil"></i>
     </div>
 

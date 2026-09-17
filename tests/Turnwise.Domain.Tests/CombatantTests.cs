@@ -72,6 +72,24 @@ public class CombatantTests
     }
 
     [Fact]
+    public void Name_LongerThanMaxIsSilentlyTruncated()
+    {
+        var combatant = new Combatant("Goblin", 10);
+
+        combatant.Name = new string('x', Combatant.MaxNameLength + 50);
+
+        Assert.Equal(Combatant.MaxNameLength, combatant.Name.Length);
+    }
+
+    [Fact]
+    public void Constructor_NameLongerThanMaxIsSilentlyTruncated()
+    {
+        var combatant = new Combatant(new string('x', Combatant.MaxNameLength + 50), 10);
+
+        Assert.Equal(Combatant.MaxNameLength, combatant.Name.Length);
+    }
+
+    [Fact]
     public void SetArmorClass_DefaultsToNullAndCanBeClearedAgain()
     {
         var combatant = new Combatant("Goblin", 10);

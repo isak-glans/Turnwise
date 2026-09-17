@@ -34,6 +34,25 @@ public class DiceFormulaTests
         Assert.Null(formula);
     }
 
+    [Theory]
+    [InlineData("1d6+99999999999999999999")] // modifier digit run overflows int - must not throw
+    [InlineData("99999999999999999999d6")] // dice count digit run overflows int - must not throw
+    [InlineData("1d99999999999999999999")] // die size digit run overflows int - must not throw
+    [InlineData("1d20+9999")] // in-range digits, but modifier exceeds the -999..999 bound
+    public void TryParse_RejectsOversizedNumbersWithoutThrowing(string notation)
+    {
+        var parsed = DiceFormula.TryParse(notation, out var formula);
+
+        Assert.False(parsed);
+        Assert.Null(formula);
+    }
+
+    [Fact]
+    public void Parse_ThrowsFormatExceptionNotOverflowExceptionForOversizedModifier()
+    {
+        Assert.Throws<FormatException>(() => DiceFormula.Parse("1d6+99999999999999999999"));
+    }
+
     [Fact]
     public void ToString_RoundTripsNotation()
     {

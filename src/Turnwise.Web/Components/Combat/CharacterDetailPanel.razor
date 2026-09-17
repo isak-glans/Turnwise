@@ -50,7 +50,7 @@
                 </label>
             </div>
             <div class="detail-title">
-                <input class="name-input-lg" value="@combatant.Name" @oninput="e => RenameCombatant(combatant, e)" />
+                <input class="name-input-lg" value="@combatant.Name" maxlength="@Combatant.MaxNameLength" @oninput="e => RenameCombatant(combatant, e)" />
             </div>
             @if (combatant.Id == State.Current.ActiveCombatantId)
             {
@@ -107,7 +107,7 @@
 
                 <span class="field-label">Initiative formula</span>
                 <div class="field-row">
-                    <input @bind="combatant.InitiativeFormula" placeholder="e.g. 1d20+2" />
+                    <input @bind="combatant.InitiativeFormula" placeholder="e.g. 1d20+2" maxlength="@DiceFormula.MaxNotationLength" />
                     <button class="btn" @onclick="() => RollInitiative(combatant)"><i class="bi bi-dice-6-fill"></i> Roll</button>
                 </div>
             </div>
@@ -271,7 +271,7 @@
                                 @if (_editingRollId == roll.Id)
                                 {
                                     <input class="inline-edit-input" @bind="_editRollName" placeholder="Name" />
-                                    <input class="inline-edit-input" @bind="_editRollFormula" placeholder="1d20+4" />
+                                    <input class="inline-edit-input" @bind="_editRollFormula" placeholder="1d20+4" maxlength="@DiceFormula.MaxNotationLength" />
                                     <button class="btn btn-sm btn-primary" @onclick="() => SaveRollEdit(roll)">Save</button>
                                     <button class="btn btn-sm" @onclick="() => _editingRollId = null">Cancel</button>
                                 }
@@ -303,7 +303,7 @@
                     {
                         <div class="add-inline-form">
                             <input @bind="_newRollName" placeholder="Name" />
-                            <input @bind="_newRollFormula" placeholder="1d20+4" />
+                            <input @bind="_newRollFormula" placeholder="1d20+4" maxlength="@DiceFormula.MaxNotationLength" />
                             <button class="btn btn-primary" @onclick="() => AddRoll(combatant)">Add</button>
                         </div>
                     }
