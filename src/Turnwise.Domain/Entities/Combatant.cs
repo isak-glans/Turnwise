@@ -128,7 +128,11 @@ public sealed class Combatant
     public int ApplyHpDelta(int delta)
     {
         var before = CurrentHp;
-        CurrentHp = Math.Clamp(CurrentHp + delta, 0, MaxHp);
+        // Widen to long first: CurrentHp + delta can overflow int when delta comes from
+        // unbounded free-text input (e.g. int.MaxValue), which would otherwise wrap around
+        // to a huge negative number before Clamp ever sees it.
+        var target = (long)CurrentHp + delta;
+        CurrentHp = (int)Math.Clamp(target, 0, MaxHp);
         return CurrentHp - before;
     }
 
@@ -145,7 +149,15 @@ public sealed class Combatant
 
     public void SetInitiative(int? value) => Initiative = value;
 
-    public void SetArmorClass(int? value) => ArmorClass = value;
+    public void SetArmorClass(int? value)
+    {
+        if (value is { } ac && ac < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(value), "Armor Class cannot be negative.");
+        }
+
+        ArmorClass = value;
+    }
 
     /// <summary>Clears initiative. Used when importing a saved character template into a new encounter.</summary>
     public void ClearInitiative() => Initiative = null;

@@ -30,6 +30,21 @@ public class EncounterServiceTests
     }
 
     [Fact]
+    public void ApplyHpDelta_ExtremePositiveDeltaDoesNotOverflowPastMaxHp()
+    {
+        var service = MakeService();
+        var encounter = new Encounter();
+        var combatant = new Combatant("Goblin", 20);
+        encounter.AddCombatant(combatant);
+        service.ApplyHpDelta(encounter, combatant.Id, -12); // leave room to heal, so the clamp is actually exercised
+
+        var applied = service.ApplyHpDelta(encounter, combatant.Id, int.MaxValue);
+
+        Assert.Equal(20, combatant.CurrentHp);
+        Assert.Equal(12, applied);
+    }
+
+    [Fact]
     public void RollInitiative_SetsInitiativeFromFormulaAndLogs()
     {
         var service = MakeService(15);

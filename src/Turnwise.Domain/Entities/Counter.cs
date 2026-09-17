@@ -1,10 +1,24 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Turnwise.Domain.Entities;
 
 /// <summary>A generic, system-agnostic numeric tracker (e.g. Superiority Dice, Exhaustion, Ki points, ammo).</summary>
 public sealed class Counter
 {
+    public const int MaxNameLength = 100;
+
+    private string _name;
+
     public Guid Id { get; }
-    public string Name { get; set; }
+
+    /// <summary>Silently truncated to <see cref="MaxNameLength"/> rather than rejected, since this can be set on every keystroke while editing.</summary>
+    public string Name
+    {
+        get => _name;
+        [MemberNotNull(nameof(_name))]
+        set => _name = Truncate(value);
+    }
+
     public int Current { get; private set; }
     public int Max { get; private set; }
     public bool ShowBar { get; set; }
@@ -42,5 +56,11 @@ public sealed class Counter
 
         Max = max;
         Current = Math.Clamp(Current, 0, Max);
+    }
+
+    private static string Truncate(string? value)
+    {
+        var text = value ?? "";
+        return text.Length > MaxNameLength ? text[..MaxNameLength] : text;
     }
 }

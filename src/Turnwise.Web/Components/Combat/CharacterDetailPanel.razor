@@ -158,8 +158,8 @@
                                 <span class="stat-icon icon-accent"><i class="bi bi-hexagon-fill"></i></span>
                                 @if (_editingCounterId == counter.Id)
                                 {
-                                    <input class="inline-edit-input" @bind="_editCounterName" placeholder="Name" />
-                                    <input class="inline-edit-input narrow" type="number" @bind="_editCounterMax" placeholder="Max" />
+                                    <input class="inline-edit-input" @bind="_editCounterName" placeholder="Name" maxlength="@Counter.MaxNameLength" />
+                                    <input class="inline-edit-input narrow" type="number" min="0" @bind="_editCounterMax" placeholder="Max" />
                                     <button class="btn btn-sm btn-primary" @onclick="() => SaveCounterEdit(counter)">Save</button>
                                     <button class="btn btn-sm" @onclick="() => _editingCounterId = null">Cancel</button>
                                 }
@@ -189,8 +189,8 @@
                     @if (_showAddCounter)
                     {
                         <div class="add-inline-form">
-                            <input @bind="_newCounterName" placeholder="e.g. AC, Ammo, Ki" />
-                            <input type="number" @bind="_newCounterMax" placeholder="Max" />
+                            <input @bind="_newCounterName" placeholder="e.g. AC, Ammo, Ki" maxlength="@Counter.MaxNameLength" />
+                            <input type="number" min="0" @bind="_newCounterMax" placeholder="Max" />
                             <button class="btn btn-primary" @onclick="() => AddCounter(combatant)">Add</button>
                         </div>
                     }
@@ -270,7 +270,7 @@
                                 <span class="stat-icon icon-accent"><i class="bi bi-dice-6-fill"></i></span>
                                 @if (_editingRollId == roll.Id)
                                 {
-                                    <input class="inline-edit-input" @bind="_editRollName" placeholder="Name" />
+                                    <input class="inline-edit-input" @bind="_editRollName" placeholder="Name" maxlength="@NamedRoll.MaxNameLength" />
                                     <input class="inline-edit-input" @bind="_editRollFormula" placeholder="1d20+4" maxlength="@DiceFormula.MaxNotationLength" />
                                     <button class="btn btn-sm btn-primary" @onclick="() => SaveRollEdit(roll)">Save</button>
                                     <button class="btn btn-sm" @onclick="() => _editingRollId = null">Cancel</button>
@@ -302,7 +302,7 @@
                     @if (_showAddRoll)
                     {
                         <div class="add-inline-form">
-                            <input @bind="_newRollName" placeholder="Name" />
+                            <input @bind="_newRollName" placeholder="Name" maxlength="@NamedRoll.MaxNameLength" />
                             <input @bind="_newRollFormula" placeholder="1d20+4" maxlength="@DiceFormula.MaxNotationLength" />
                             <button class="btn btn-primary" @onclick="() => AddRoll(combatant)">Add</button>
                         </div>
@@ -626,7 +626,7 @@
 
     private void AddCounter(Combatant combatant)
     {
-        if (string.IsNullOrWhiteSpace(_newCounterName))
+        if (string.IsNullOrWhiteSpace(_newCounterName) || _newCounterMax < 0)
         {
             return;
         }
