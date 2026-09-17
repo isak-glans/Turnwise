@@ -135,6 +135,9 @@ public sealed class Combatant
 
     public void RemoveNamedRoll(Guid rollId) => _namedRolls.RemoveAll(r => r.Id == rollId);
 
+    /// <summary>Manual drag-and-drop reordering of the dice roll list.</summary>
+    public void ReorderNamedRoll(int fromIndex, int toIndex) => Move(_namedRolls, fromIndex, toIndex);
+
     public Counter AddCounter(string name, int current, int max, bool showBar = true, Guid? id = null)
     {
         var counter = new Counter(name, current, max, showBar, id);
@@ -143,6 +146,26 @@ public sealed class Combatant
     }
 
     public void RemoveCounter(Guid counterId) => _counters.RemoveAll(c => c.Id == counterId);
+
+    /// <summary>Manual drag-and-drop reordering of the counter list.</summary>
+    public void ReorderCounter(int fromIndex, int toIndex) => Move(_counters, fromIndex, toIndex);
+
+    private static void Move<T>(List<T> list, int fromIndex, int toIndex)
+    {
+        if (fromIndex < 0 || fromIndex >= list.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(fromIndex));
+        }
+
+        if (toIndex < 0 || toIndex >= list.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(toIndex));
+        }
+
+        var item = list[fromIndex];
+        list.RemoveAt(fromIndex);
+        list.Insert(toIndex, item);
+    }
 
     public Condition AddCondition(string name, Guid? id = null)
     {

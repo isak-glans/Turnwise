@@ -56,6 +56,16 @@ public sealed class EncounterSessionState
         NotifyChanged();
     }
 
+    public void SelectAllForBulk(IEnumerable<Guid> combatantIds)
+    {
+        foreach (var id in combatantIds)
+        {
+            _bulkSelectedIds.Add(id);
+        }
+
+        NotifyChanged();
+    }
+
     public void RemoveFromBulkSelection(Guid combatantId)
     {
         if (_bulkSelectedIds.Remove(combatantId))

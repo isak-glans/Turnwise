@@ -140,6 +140,54 @@ button:hover {
     color: var(--tw-accent);
 }
 
+.header-menu-group {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.menu-wrap {
+    position: relative;
+}
+
+.dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.3rem);
+    background: var(--tw-panel-bg);
+    border: 1px solid var(--tw-panel-border);
+    border-radius: var(--tw-radius-md);
+    box-shadow: var(--tw-shadow);
+    min-width: 200px;
+    overflow: hidden;
+    z-index: 20;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.55rem 0.8rem;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    text-align: left;
+    font-size: 0.85rem;
+    color: var(--tw-text);
+}
+
+.dropdown-item:hover {
+    background: var(--tw-inset-bg);
+    color: var(--tw-text);
+    border-color: transparent;
+}
+
+.dropdown-item.danger:hover {
+    background: var(--tw-danger-soft);
+    color: var(--tw-danger);
+}
+
 .btn {
     display: inline-flex;
     align-items: center;
@@ -349,6 +397,7 @@ button:hover {
 /* HP bars */
 
 .hp-bar {
+    display: block;
     position: relative;
     height: 0.5rem;
     background: var(--tw-inset-bg);
@@ -501,7 +550,7 @@ button:hover {
 
 .main-grid {
     display: grid;
-    grid-template-columns: minmax(300px, 0.85fr) minmax(380px, 2fr);
+    grid-template-columns: minmax(340px, 1fr) minmax(380px, 1.6fr);
     gap: 1rem;
     flex: 1;
     min-height: 0;
@@ -511,7 +560,13 @@ button:hover {
     max-height: calc(100vh - 230px);
 }
 
-@media (max-width: 1050px) {
+@media (max-width: 1200px) {
+    .main-grid {
+        grid-template-columns: minmax(300px, 1fr) minmax(320px, 1.3fr);
+    }
+}
+
+@media (max-width: 900px) {
     .main-grid {
         grid-template-columns: 1fr;
     }
@@ -547,9 +602,27 @@ button:hover {
     gap: 0.5rem;
 }
 
+.combatant-list-header {
+    display: grid;
+    grid-template-columns: auto auto auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0 0.7rem;
+    margin-bottom: 0.35rem;
+}
+
+.combatant-list-header .col-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--tw-text-faint);
+    text-align: center;
+}
+
 .combatant-card {
     display: grid;
-    grid-template-columns: auto auto auto minmax(0, 1fr) auto auto auto;
+    grid-template-columns: auto auto auto minmax(0, 1fr) auto auto;
     align-items: center;
     gap: 0.55rem;
     background: var(--tw-panel-bg);
@@ -630,12 +703,6 @@ button:hover {
     color: var(--tw-text-faint);
 }
 
-.combatant-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.1rem;
-}
-
 .combatant-init {
     text-align: center;
 }
@@ -648,15 +715,12 @@ button:hover {
 }
 
 .combatant-hp {
-    min-width: 4.75rem;
+    min-width: 6rem;
     margin-left: 0.35rem;
 }
 
-.combatant-hp .hp-text {
-    display: block;
-    font-size: 0.78rem;
-    font-weight: 600;
-    margin-bottom: 0.2rem;
+.combatant-hp .hp-bar {
+    height: 0.7rem;
 }
 
 .add-combatant-form {
@@ -881,6 +945,23 @@ button:hover {
     gap: 0.5rem;
 }
 
+.scrollable-list {
+    max-height: 15rem;
+    overflow-y: auto;
+    padding-right: 0.2rem;
+}
+
+.drag-handle {
+    cursor: grab;
+    color: var(--tw-text-faint);
+    display: inline-flex;
+    align-items: center;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
 .condition-pills {
     display: flex;
     flex-wrap: wrap;
@@ -1100,6 +1181,26 @@ button:hover {
     transform: rotate(180deg);
 }
 
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.unread-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.2rem;
+    height: 1.2rem;
+    padding: 0 0.35rem;
+    border-radius: 999px;
+    background: var(--tw-accent);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
 /* Combat log */
 
 .log-panel {
@@ -1136,6 +1237,17 @@ button:hover {
     padding: 0.3rem 0.5rem;
     border-radius: var(--tw-radius-sm);
     background: var(--tw-inset-bg);
+    animation: log-flash 1.6s ease-out;
+}
+
+@keyframes log-flash {
+    from {
+        background: var(--tw-warning-soft);
+    }
+
+    to {
+        background: var(--tw-inset-bg);
+    }
 }
 
 .log-time {

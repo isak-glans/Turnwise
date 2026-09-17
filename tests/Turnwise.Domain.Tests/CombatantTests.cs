@@ -1,5 +1,4 @@
 using Turnwise.Domain.Entities;
-using Turnwise.Domain.Enums;
 using Xunit;
 
 namespace Turnwise.Domain.Tests;
@@ -82,5 +81,32 @@ public class CombatantTests
 
         combatant.RemoveCondition(condition.Id);
         Assert.Empty(combatant.Conditions);
+    }
+
+    [Fact]
+    public void ReorderNamedRoll_MovesRollToNewPosition()
+    {
+        var combatant = new Combatant("Fighter", 20);
+        var formula = Turnwise.Domain.ValueObjects.DiceFormula.Parse("1d6");
+        combatant.AddNamedRoll("A", formula);
+        combatant.AddNamedRoll("B", formula);
+        combatant.AddNamedRoll("C", formula);
+
+        combatant.ReorderNamedRoll(0, 2);
+
+        Assert.Equal(["B", "C", "A"], combatant.NamedRolls.Select(r => r.Name));
+    }
+
+    [Fact]
+    public void ReorderCounter_MovesCounterToNewPosition()
+    {
+        var combatant = new Combatant("Fighter", 20);
+        combatant.AddCounter("A", 1, 1);
+        combatant.AddCounter("B", 1, 1);
+        combatant.AddCounter("C", 1, 1);
+
+        combatant.ReorderCounter(2, 0);
+
+        Assert.Equal(["C", "A", "B"], combatant.Counters.Select(c => c.Name));
     }
 }

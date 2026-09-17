@@ -9,19 +9,20 @@
             <span class="round-badge">Round @State.Current.Round</span>
             <button class="icon-btn" title="Next turn" @onclick="NextTurn"><i class="bi bi-skip-end-fill"></i></button>
             <button class="icon-btn" title="Auto-sort by initiative" @onclick="AutoSort"><i class="bi bi-sort-numeric-down"></i></button>
-            <button class="icon-btn @(State.Current.AllowGmBulkInitiativeRoll ? "active" : "")"
-                    title="Allow GM to roll initiative for all combatants at once"
-                    @onclick="ToggleBulkRoll">
-                <i class="bi bi-people-fill"></i>
-            </button>
         </div>
     </div>
 
-    @if (State.Current.AllowGmBulkInitiativeRoll)
+    @if (State.Current.Combatants.Count > 0)
     {
-        <button class="btn btn-block btn-sm" style="margin-bottom:0.6rem" @onclick="RollAllInitiative">
-            <i class="bi bi-dice-6-fill"></i> Roll initiative for all
-        </button>
+        <div class="combatant-list-header">
+            <input type="checkbox" class="bulk-select-checkbox" title="Select all"
+                   checked="@AllSelected" @onchange="ToggleSelectAll" />
+            <span></span>
+            <span></span>
+            <span></span>
+            <span class="col-label">Init</span>
+            <span class="col-label">HP</span>
+        </div>
     }
 
     <ul class="combatant-list">
@@ -69,19 +70,10 @@
                 <span class="combatant-init" title="Initiative">
                     <span class="value">@(combatant.Initiative?.ToString() ?? "—")</span>
                 </span>
-                <span class="combatant-hp">
-                    <span class="hp-text">@combatant.CurrentHp / @combatant.MaxHp</span>
+                <span class="combatant-hp" title="@($"{combatant.CurrentHp} / {combatant.MaxHp} HP")">
                     <span class="hp-bar">
                         <span class="hp-bar-fill @HpFillClass(combatant)" style="width:@(HpPercent(combatant))%"></span>
                     </span>
-                </span>
-                <span class="combatant-actions">
-                    <button class="icon-btn-ghost neutral" title="Duplicate" @onclick="() => Duplicate(combatant.Id)" @onclick:stopPropagation>
-                        <i class="bi bi-copy"></i>
-                    </button>
-                    <button class="icon-btn-ghost" title="Remove from encounter" @onclick="() => Remove(combatant.Id)" @onclick:stopPropagation>
-                        <i class="bi bi-x-lg"></i>
-                    </button>
                 </span>
             </li>
         }
@@ -124,6 +116,9 @@
     private int _newMaxHp = 10;
     private string? _error;
 
+    private bool AllSelected =>
+        State.Current.Combatants.Count > 0 && State.Current.Combatants.All(c => State.IsBulkSelected(c.Id));
+
     private static bool HasPortrait(Combatant c) => !string.IsNullOrEmpty(c.PortraitBase64);
 
     private static int HpPercent(Combatant c) => c.MaxHp == 0 ? 0 : (int)Math.Round(100.0 * c.CurrentHp / c.MaxHp);
@@ -139,6 +134,18 @@
         };
     }
 
+    private void ToggleSelectAll()
+    {
+        if (AllSelected)
+        {
+            State.ClearBulkSelection();
+        }
+        else
+        {
+            State.SelectAllForBulk(State.Current.Combatants.Select(c => c.Id));
+        }
+    }
+
     private void NextTurn()
     {
         EncounterService.NextTurn(State.Current);
@@ -148,26 +155,6 @@
     private void AutoSort()
     {
         EncounterService.AutoSort(State.Current);
-        State.NotifyChanged();
-    }
-
-    private void ToggleBulkRoll()
-    {
-        State.Current.AllowGmBulkInitiativeRoll = !State.Current.AllowGmBulkInitiativeRoll;
-        State.NotifyChanged();
-    }
-
-    private void RollAllInitiative()
-    {
-        try
-        {
-            EncounterService.RollInitiativeForAll(State.Current);
-            _error = null;
-        }
-        catch (Exception ex)
-        {
-            _error = ex.Message;
-        }
         State.NotifyChanged();
     }
 
@@ -194,23 +181,6 @@
         _newMaxHp = 10;
         _showAddForm = false;
         State.SelectCombatant(combatant.Id);
-    }
-
-    private void Duplicate(Guid id)
-    {
-        var clone = EncounterService.DuplicateCombatant(State.Current, id);
-        State.SelectCombatant(clone.Id);
-    }
-
-    private void Remove(Guid id)
-    {
-        if (State.SelectedCombatantId == id)
-        {
-            State.SelectCombatant(null);
-        }
-        EncounterService.RemoveCombatant(State.Current, id);
-        State.RemoveFromBulkSelection(id);
-        State.NotifyChanged();
     }
 
     private async Task LoadTemplate(InputFileChangeEventArgs e)

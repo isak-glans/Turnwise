@@ -123,10 +123,6 @@ public sealed class EncounterService(DiceRollingService diceRoller)
         return result;
     }
 
-    /// <summary>Bulk-rolls initiative for every combatant in the encounter that has an initiative formula set.</summary>
-    public IReadOnlyDictionary<Guid, DiceRollResult> RollInitiativeForAll(Encounter encounter) =>
-        RollInitiativeForMany(encounter, encounter.Combatants.Select(c => c.Id));
-
     /// <summary>Bulk-rolls initiative for the given combatants (each gets its own independent roll). Combatants with no formula set are skipped.</summary>
     public IReadOnlyDictionary<Guid, DiceRollResult> RollInitiativeForMany(Encounter encounter, IEnumerable<Guid> combatantIds)
     {

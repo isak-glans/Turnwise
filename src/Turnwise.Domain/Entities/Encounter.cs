@@ -14,9 +14,6 @@ public sealed class Encounter
     public int Round { get; private set; } = 1;
     public Guid? ActiveCombatantId { get; private set; }
 
-    /// <summary>Whether the GM can roll initiative for every combatant at once, instead of one at a time.</summary>
-    public bool AllowGmBulkInitiativeRoll { get; set; }
-
     /// <summary>Turn order - list position is the order of play. Reordered via drag-and-drop or auto-sort.</summary>
     public IReadOnlyList<Combatant> Combatants => _combatants;
 
@@ -29,12 +26,11 @@ public sealed class Encounter
     }
 
     /// <summary>Reconstructs an encounter with exact saved state (used when loading from a file). Combatants and log entries are added separately.</summary>
-    public static Encounter Restore(Guid id, string name, int round, Guid? activeCombatantId, bool allowGmBulkInitiativeRoll) =>
+    public static Encounter Restore(Guid id, string name, int round, Guid? activeCombatantId) =>
         new(name, id)
         {
             Round = round,
-            ActiveCombatantId = activeCombatantId,
-            AllowGmBulkInitiativeRoll = allowGmBulkInitiativeRoll
+            ActiveCombatantId = activeCombatantId
         };
 
     public void AddCombatant(Combatant combatant, int? atIndex = null)

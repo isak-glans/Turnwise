@@ -17,7 +17,6 @@ public sealed class EncounterFileDto
     public string Name { get; set; } = string.Empty;
     public int Round { get; set; }
     public Guid? ActiveCombatantId { get; set; }
-    public bool AllowGmBulkInitiativeRoll { get; set; }
     public List<CombatantDto> Combatants { get; set; } = [];
     public List<CombatLogEntryDto> Log { get; set; } = [];
 

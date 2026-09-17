@@ -24,7 +24,7 @@ public sealed class JsonEncounterStore : IEncounterStore
             throw new UnsupportedSchemaVersionException(fileDto.SchemaVersion, SchemaVersions.MinSupportedEncounterSchemaVersion);
         }
 
-        var encounter = Encounter.Restore(fileDto.Id, fileDto.Name, fileDto.Round, fileDto.ActiveCombatantId, fileDto.AllowGmBulkInitiativeRoll);
+        var encounter = Encounter.Restore(fileDto.Id, fileDto.Name, fileDto.Round, fileDto.ActiveCombatantId);
 
         foreach (var combatantDto in fileDto.Combatants)
         {
@@ -64,7 +64,6 @@ public sealed class JsonEncounterStore : IEncounterStore
             Name = encounter.Name,
             Round = encounter.Round,
             ActiveCombatantId = encounter.ActiveCombatantId,
-            AllowGmBulkInitiativeRoll = encounter.AllowGmBulkInitiativeRoll,
             Combatants = combatantDtos,
             Images = images,
             Log = encounter.Log.Select(e => new CombatLogEntryDto
