@@ -9,7 +9,7 @@ namespace Turnwise.Web.Components.Combat;
 /// has no changing parameters, so every component that reads shared session state needs its own
 /// subscription to know when to redraw - subscribing only at the page level is not enough.
 /// </summary>
-public abstract class EncounterStateAwareComponentBase : ComponentBase, IDisposable
+public abstract class EncounterStateAwareComponentBase : ComponentBase, IAsyncDisposable
 {
     [Inject]
     protected EncounterSessionState State { get; set; } = default!;
@@ -19,8 +19,12 @@ public abstract class EncounterStateAwareComponentBase : ComponentBase, IDisposa
         State.Changed += StateHasChanged;
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         State.Changed -= StateHasChanged;
+        await DisposeAsyncCore();
     }
+
+    /// <summary>Override for extra async cleanup (e.g. disposing a JS module reference) - the base unsubscription above always runs regardless.</summary>
+    protected virtual ValueTask DisposeAsyncCore() => ValueTask.CompletedTask;
 }

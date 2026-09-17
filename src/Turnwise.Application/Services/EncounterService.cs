@@ -56,9 +56,14 @@ public sealed class EncounterService(DiceRollingService diceRoller)
         var combatant = GetCombatant(encounter, combatantId);
         var applied = combatant.ApplyHpDelta(delta);
 
-        var direction = applied < 0 ? "damage" : "healing";
         var sign = applied >= 0 ? "+" : "";
-        var message = $"{combatant.Name}: {sign}{applied} HP ({direction}) -> {combatant.CurrentHp}/{combatant.MaxHp}";
+        var verb = applied switch
+        {
+            < 0 => "takes damage",
+            > 0 => "heals",
+            _ => "HP unchanged"
+        };
+        var message = $"{combatant.Name} {verb}, now at {combatant.CurrentHp}/{combatant.MaxHp} HP";
         encounter.AddLogEntry(new CombatLogEntry(CombatLogEntryType.HpChange, message, combatant.Id, result: $"{sign}{applied}"));
 
         return applied;
@@ -94,7 +99,7 @@ public sealed class EncounterService(DiceRollingService diceRoller)
             results[id] = roll;
 
             combatant.ApplyHpDelta(-roll.Total);
-            var message = $"{combatant.Name}: {roll} damage -> {combatant.CurrentHp}/{combatant.MaxHp}";
+            var message = $"{combatant.Name} takes {formula} damage: {roll.Breakdown}, now at {combatant.CurrentHp}/{combatant.MaxHp} HP";
             encounter.AddLogEntry(new CombatLogEntry(CombatLogEntryType.HpChange, message, combatant.Id, result: $"-{roll.Total}"));
         }
 
@@ -118,7 +123,7 @@ public sealed class EncounterService(DiceRollingService diceRoller)
         combatant.SetInitiative(result.Total);
         encounter.AddLogEntry(new CombatLogEntry(
             CombatLogEntryType.InitiativeChange,
-            $"{combatant.Name}: initiative {result} = {result.Total}",
+            $"{combatant.Name} rolls initiative ({combatant.InitiativeFormula}): {result.Breakdown}",
             combatant.Id,
             result: result.Total.ToString()));
 
@@ -152,7 +157,7 @@ public sealed class EncounterService(DiceRollingService diceRoller)
         var result = diceRoller.Roll(namedRoll.Formula);
         encounter.AddLogEntry(new CombatLogEntry(
             CombatLogEntryType.DiceRoll,
-            $"{combatant.Name}: {namedRoll.Name} ({result}) = {result.Total}",
+            $"{combatant.Name} rolls {namedRoll.Name} ({namedRoll.Formula}): {result.Breakdown}",
             combatant.Id,
             result: result.Total.ToString()));
 

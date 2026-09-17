@@ -14,11 +14,11 @@
                 <li @key="entry.Id">
                     <span class="log-time">@entry.Timestamp.ToLocalTime().ToString("HH:mm")</span>
                     <span class="log-type">@FormatType(entry.Type)</span>
+                    @entry.Message
                     @if (!string.IsNullOrEmpty(entry.Result))
                     {
-                        <strong class="log-result">@entry.Result</strong>
+                        <strong class="log-result">(@entry.Result)</strong>
                     }
-                    @entry.Message
                 </li>
             }
         </ul>

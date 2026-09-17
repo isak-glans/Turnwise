@@ -12,6 +12,9 @@ public sealed class EncounterSessionState
     private readonly HashSet<Guid> _bulkSelectedIds = [];
     private readonly Dictionary<Guid, int> _lastSeenLogCounts = new();
     private readonly Dictionary<Guid, bool> _logExpandedStates = new();
+    private readonly Dictionary<Guid, string> _rollFilters = new();
+    private readonly Dictionary<Guid, string> _counterFilters = new();
+    private readonly Dictionary<Guid, string> _activeTabs = new();
 
     public Encounter Current { get; private set; } = new();
     public Guid? SelectedCombatantId { get; private set; }
@@ -28,6 +31,9 @@ public sealed class EncounterSessionState
         _bulkSelectedIds.Clear();
         _lastSeenLogCounts.Clear();
         _logExpandedStates.Clear();
+        _rollFilters.Clear();
+        _counterFilters.Clear();
+        _activeTabs.Clear();
         NotifyChanged();
     }
 
@@ -116,6 +122,21 @@ public sealed class EncounterSessionState
         _logExpandedStates[combatantId] = expanded;
         NotifyChanged();
     }
+
+    /// <summary>Per-character search text for the Dice Rolls list. Survives the panel being recreated on character switch, but not shared between characters.</summary>
+    public string GetRollFilter(Guid combatantId) => _rollFilters.GetValueOrDefault(combatantId, "");
+
+    public void SetRollFilter(Guid combatantId, string filter) => _rollFilters[combatantId] = filter;
+
+    /// <summary>Per-character search text for the Counters list. Same reasoning as <see cref="GetRollFilter"/>.</summary>
+    public string GetCounterFilter(Guid combatantId) => _counterFilters.GetValueOrDefault(combatantId, "");
+
+    public void SetCounterFilter(Guid combatantId, string filter) => _counterFilters[combatantId] = filter;
+
+    /// <summary>Which of the Counters/Conditions/Dice Rolls tabs a combatant's panel was last showing. Defaults to "counters".</summary>
+    public string GetActiveTab(Guid combatantId) => _activeTabs.GetValueOrDefault(combatantId, "counters");
+
+    public void SetActiveTab(Guid combatantId, string tab) => _activeTabs[combatantId] = tab;
 
     public void NotifyChanged() => Changed?.Invoke();
 }
