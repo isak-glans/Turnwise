@@ -18,9 +18,10 @@
             <input type="checkbox" class="bulk-select-checkbox" title="Select all"
                    checked="@AllSelected" @onchange="ToggleSelectAll" />
             <span></span>
-            <span></span>
-            <span></span>
             <span class="col-label">Init</span>
+            <span></span>
+            <span></span>
+            <span></span>
             <span class="col-label">HP</span>
         </div>
     }
@@ -40,7 +41,10 @@
                 <input type="checkbox" class="bulk-select-checkbox" title="Select for bulk action"
                        checked="@State.IsBulkSelected(combatant.Id)"
                        @onclick="() => State.ToggleBulkSelection(combatant.Id)" @onclick:stopPropagation />
-                <span class="turn-badge @(isActive ? "is-active" : "")">@(isActive ? "▶" : (index + 1).ToString())</span>
+                <span class="turn-badge @(isActive ? "is-active" : "")">@(isActive ? "▶" : "")</span>
+                <span class="combatant-init" title="Initiative">
+                    <span class="value">@(combatant.Initiative?.ToString() ?? "—")</span>
+                </span>
                 <span class="avatar avatar-sm" style="@(HasPortrait(combatant) ? "" : $"background:{AvatarHelper.ColorFor(combatant.Id)}")">
                     @if (HasPortrait(combatant))
                     {
@@ -67,9 +71,16 @@
                         </span>
                     }
                 </span>
-                <span class="combatant-init" title="Initiative">
-                    <span class="value">@(combatant.Initiative?.ToString() ?? "—")</span>
-                </span>
+                @if (combatant.ArmorClass.HasValue)
+                {
+                    <span class="combatant-ac" title="Armor Class">
+                        <i class="bi bi-shield-fill"></i>@combatant.ArmorClass
+                    </span>
+                }
+                else
+                {
+                    <span></span>
+                }
                 <span class="combatant-hp" title="@($"{combatant.CurrentHp} / {combatant.MaxHp} HP")">
                     <span class="hp-bar">
                         <span class="hp-bar-fill @HpFillClass(combatant)" style="width:@(HpPercent(combatant))%"></span>

@@ -62,6 +62,11 @@
             <div class="stat-card">
                 <div class="stat-card-header">
                     <span class="stat-icon icon-danger"><i class="bi bi-heart-fill"></i></span> HP
+                    <span class="ac-field" title="Armor Class">
+                        <i class="bi bi-shield-fill"></i>
+                        <input type="number" class="ac-input" value="@combatant.ArmorClass" min="0" placeholder="AC"
+                               title="Armor Class (leave blank to hide)" @onchange="e => SetArmorClass(combatant, e)" />
+                    </span>
                 </div>
                 <div class="stat-big-row">
                     <span class="stat-big">@combatant.CurrentHp</span>
@@ -329,7 +334,7 @@
                             @entry.Message
                             @if (!string.IsNullOrEmpty(entry.Result))
                             {
-                                <strong class="log-result">(@entry.Result)</strong>
+                                <strong class="log-result">&nbsp;→ @entry.Result</strong>
                             }
                         </li>
                     }
@@ -465,6 +470,20 @@
         if (int.TryParse(e.Value?.ToString(), out var value) && value >= 0)
         {
             combatant.SetMaxHp(value);
+        }
+        State.NotifyChanged();
+    }
+
+    private void SetArmorClass(Combatant combatant, ChangeEventArgs e)
+    {
+        var text = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            combatant.SetArmorClass(null);
+        }
+        else if (int.TryParse(text, out var value) && value >= 0)
+        {
+            combatant.SetArmorClass(value);
         }
         State.NotifyChanged();
     }
@@ -672,6 +691,7 @@
     private void AddCondition(Combatant combatant, string name)
     {
         combatant.AddCondition(name);
+        _showAddCondition = false;
         State.NotifyChanged();
     }
 

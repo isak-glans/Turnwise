@@ -19,6 +19,7 @@ public sealed class Combatant
     public int MaxHp { get; private set; }
     public bool MaxHpLocked { get; set; }
     public int CurrentHp { get; private set; }
+    public int? ArmorClass { get; private set; }
 
     public string? InitiativeFormula { get; set; }
     public int? Initiative { get; private set; }
@@ -60,7 +61,8 @@ public sealed class Combatant
         string? portraitBase64,
         string? initiativeFormula,
         int? initiative,
-        bool initiativeLocked = false)
+        bool initiativeLocked = false,
+        int? armorClass = null)
     {
         var combatant = new Combatant(name, maxHp, id)
         {
@@ -71,6 +73,7 @@ public sealed class Combatant
             CurrentHp = Math.Clamp(currentHp, 0, maxHp)
         };
         combatant.SetInitiative(initiative);
+        combatant.SetArmorClass(armorClass);
         return combatant;
     }
 
@@ -81,7 +84,7 @@ public sealed class Combatant
     /// </summary>
     public Combatant Duplicate()
     {
-        var clone = Restore(Guid.NewGuid(), Name, MaxHp, CurrentHp, MaxHpLocked, PortraitBase64, InitiativeFormula, null, InitiativeLocked);
+        var clone = Restore(Guid.NewGuid(), Name, MaxHp, CurrentHp, MaxHpLocked, PortraitBase64, InitiativeFormula, null, InitiativeLocked, ArmorClass);
 
         foreach (var roll in _namedRolls)
         {
@@ -122,6 +125,8 @@ public sealed class Combatant
     }
 
     public void SetInitiative(int? value) => Initiative = value;
+
+    public void SetArmorClass(int? value) => ArmorClass = value;
 
     /// <summary>Clears initiative. Used when importing a saved character template into a new encounter.</summary>
     public void ClearInitiative() => Initiative = null;

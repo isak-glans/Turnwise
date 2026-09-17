@@ -1,6 +1,7 @@
 @inherits EncounterStateAwareComponentBase
 @inject EncounterFileService EncounterFileService
 @inject FileDownloadService FileDownload
+@inject IJSRuntime JS
 
 <div class="app-header card">
     <div class="brand">
@@ -14,12 +15,22 @@
     </div>
 
     <div class="header-actions">
-        <label class="btn file-button" title="Loading will overwrite the current encounter.">
-            <i class="bi bi-folder2-open"></i> Load Encounter
-            <InputFile OnChange="LoadEncounter" accept=".json" />
-        </label>
-        <button class="btn" @onclick="SaveEncounter"><i class="bi bi-save"></i> Save Encounter</button>
-        <button class="btn" @onclick="NewEncounter"><i class="bi bi-plus-lg"></i> New Encounter</button>
+        <div class="menu-wrap">
+            <button id="menu-trigger-settings" class="icon-btn" title="Encounter settings" @onclick="ToggleMenu">
+                <i class="bi bi-gear-fill"></i>
+            </button>
+            @if (_menuOpen)
+            {
+                <div class="dropdown-menu" @ref="_menuRef">
+                    <label class="dropdown-item file-button" title="Loading will overwrite the current encounter.">
+                        <i class="bi bi-folder2-open"></i> Load Encounter
+                        <InputFile OnChange="LoadEncounter" accept=".json" />
+                    </label>
+                    <button class="dropdown-item" @onclick="SaveEncounter"><i class="bi bi-save"></i> Save Encounter</button>
+                    <button class="dropdown-item" @onclick="NewEncounter"><i class="bi bi-plus-lg"></i> New Encounter</button>
+                </div>
+            }
+        </div>
     </div>
 </div>
 @if (!string.IsNullOrEmpty(_error))
@@ -29,8 +40,17 @@
 
 @code {
     private string? _error;
+    private bool _menuOpen;
+    private ElementReference _menuRef;
+    private IJSObjectReference? _menuModule;
 
-    private void NewEncounter() => State.NewEncounter();
+    private void ToggleMenu() => _menuOpen = !_menuOpen;
+
+    private void NewEncounter()
+    {
+        _menuOpen = false;
+        State.NewEncounter();
+    }
 
     private async Task SaveEncounter()
     {
@@ -38,6 +58,8 @@
         await EncounterFileService.SaveEncounterAsync(State.Current, stream);
         var fileName = $"{Sanitize(State.Current.Name)}.turnwise-encounter.json";
         await FileDownload.DownloadAsync(fileName, "application/json", stream.ToArray());
+        _menuOpen = false;
+        State.NotifyChanged();
     }
 
     private async Task LoadEncounter(InputFileChangeEventArgs e)
@@ -52,7 +74,41 @@
         catch (Exception ex)
         {
             _error = $"Failed to load encounter: {ex.Message}";
-            State.NotifyChanged();
+        }
+        _menuOpen = false;
+        State.NotifyChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (_menuOpen)
+        {
+            try
+            {
+                _menuModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/dropdownMenu.js");
+                await _menuModule.InvokeVoidAsync("positionMenu", "menu-trigger-settings", _menuRef);
+            }
+            catch (JSDisconnectedException)
+            {
+                // circuit is going away - nothing to position
+            }
+        }
+    }
+
+    protected override async ValueTask DisposeAsyncCore()
+    {
+        if (_menuModule is not null)
+        {
+            try
+            {
+                await _menuModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // circuit already gone
+            }
         }
     }
 

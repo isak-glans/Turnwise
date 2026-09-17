@@ -115,6 +115,19 @@ public sealed class EncounterService(DiceRollingService diceRoller)
         }
     }
 
+    /// <summary>Removes every condition with the given name (by-name match, since each combatant has its own condition instance) from every given combatant.</summary>
+    public void RemoveConditionFromMany(Encounter encounter, IEnumerable<Guid> combatantIds, string conditionName)
+    {
+        foreach (var id in combatantIds.ToList())
+        {
+            var combatant = GetCombatant(encounter, id);
+            foreach (var condition in combatant.Conditions.Where(c => c.Name == conditionName).ToList())
+            {
+                combatant.RemoveCondition(condition.Id);
+            }
+        }
+    }
+
     public DiceRollResult RollInitiative(Encounter encounter, Guid combatantId)
     {
         var combatant = GetCombatant(encounter, combatantId);

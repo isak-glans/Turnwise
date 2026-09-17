@@ -72,6 +72,30 @@ public class CombatantTests
     }
 
     [Fact]
+    public void SetArmorClass_DefaultsToNullAndCanBeClearedAgain()
+    {
+        var combatant = new Combatant("Goblin", 10);
+        Assert.Null(combatant.ArmorClass);
+
+        combatant.SetArmorClass(15);
+        Assert.Equal(15, combatant.ArmorClass);
+
+        combatant.SetArmorClass(null);
+        Assert.Null(combatant.ArmorClass);
+    }
+
+    [Fact]
+    public void Duplicate_CopiesArmorClass()
+    {
+        var original = new Combatant("Goblin", 10);
+        original.SetArmorClass(13);
+
+        var clone = original.Duplicate();
+
+        Assert.Equal(13, clone.ArmorClass);
+    }
+
+    [Fact]
     public void AddCondition_ThenRemoveCondition_RoundTrips()
     {
         var combatant = new Combatant("Fighter", 20);

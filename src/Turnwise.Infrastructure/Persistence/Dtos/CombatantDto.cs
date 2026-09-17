@@ -37,6 +37,7 @@ public sealed class CombatantDto
     public int MaxHp { get; set; }
     public bool MaxHpLocked { get; set; }
     public int CurrentHp { get; set; }
+    public int? ArmorClass { get; set; }
     public string? InitiativeFormula { get; set; }
     public int? Initiative { get; set; }
     public bool InitiativeLocked { get; set; }

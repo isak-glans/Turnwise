@@ -145,6 +145,24 @@ public class EncounterServiceTests
     }
 
     [Fact]
+    public void RemoveConditionFromMany_RemovesOnlyMatchingConditionFromEveryCombatant()
+    {
+        var service = MakeService();
+        var encounter = new Encounter();
+        var a = new Combatant("A", 20);
+        var b = new Combatant("B", 20);
+        encounter.AddCombatant(a);
+        encounter.AddCombatant(b);
+        service.AddConditionToMany(encounter, [a.Id, b.Id], "Prone");
+        service.AddConditionToMany(encounter, [a.Id, b.Id], "Poisoned");
+
+        service.RemoveConditionFromMany(encounter, [a.Id, b.Id], "Prone");
+
+        Assert.Equal("Poisoned", Assert.Single(a.Conditions).Name);
+        Assert.Equal("Poisoned", Assert.Single(b.Conditions).Name);
+    }
+
+    [Fact]
     public void RollInitiativeForMany_SkipsCombatantsWithoutAFormula()
     {
         var service = MakeService(10);
