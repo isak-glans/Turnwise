@@ -14,6 +14,7 @@ public class JsonCharacterTemplateStoreTests
         {
             InitiativeFormula = "1d20+2"
         };
+        goblin.SetArmorClass(15);
         goblin.AddNamedRoll("Scimitar", Domain.ValueObjects.DiceFormula.Parse("1d6+2"));
         goblin.AddCondition("Poisoned");
 
@@ -24,6 +25,7 @@ public class JsonCharacterTemplateStoreTests
 
         Assert.Equal(goblin.Name, loaded.Name);
         Assert.Equal(goblin.MaxHp, loaded.MaxHp);
+        Assert.Equal(goblin.ArmorClass, loaded.ArmorClass);
         Assert.Single(loaded.NamedRolls);
         Assert.Equal("Scimitar", loaded.NamedRolls[0].Name);
         Assert.Single(loaded.Conditions);

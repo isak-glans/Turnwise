@@ -1,5 +1,6 @@
 @page "/"
 @inherits EncounterStateAwareComponentBase
+@inject IJSRuntime JS
 
 <PageTitle>Turnwise</PageTitle>
 
@@ -18,3 +19,54 @@
 
     <CombatLogPanel />
 </div>
+
+@code {
+    private IJSObjectReference? _keyboardModule;
+    private IJSObjectReference? _escapeHandler;
+    private DotNetObjectReference<CombatTracker>? _dotNetRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            _keyboardModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/keyboardShortcuts.js");
+            _escapeHandler = await _keyboardModule.InvokeAsync<IJSObjectReference>("registerEscapeHandler", _dotNetRef);
+        }
+    }
+
+    [JSInvokable]
+    public void OnEscapePressed() => State.ClearBulkSelection();
+
+    protected override async ValueTask DisposeAsyncCore()
+    {
+        if (_escapeHandler is not null)
+        {
+            try
+            {
+                await _escapeHandler.InvokeVoidAsync("dispose");
+                await _escapeHandler.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // circuit already gone
+            }
+        }
+
+        if (_keyboardModule is not null)
+        {
+            try
+            {
+                await _keyboardModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // circuit already gone
+            }
+        }
+
+        _dotNetRef?.Dispose();
+    }
+}

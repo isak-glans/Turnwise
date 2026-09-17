@@ -1,7 +1,7 @@
 @inherits EncounterStateAwareComponentBase
 @inject EncounterService EncounterService
 
-@if (State.BulkSelectedIds.Count > 0)
+@if (State.BulkSelectedIds.Count > 1)
 {
     <div class="card bulk-panel">
         <div class="bulk-panel-header">
@@ -39,6 +39,22 @@
                             <i class="bi @(ConditionPresets.GetIcon(preset))"></i> @preset
                         </button>
                     }
+                </div>
+            }
+            @{ var common = CommonConditions; }
+            @if (common.Count > 0)
+            {
+                <div class="bulk-action-group">
+                    <span class="bulk-action-label"><i class="bi bi-exclamation-triangle-fill"></i> Shared</span>
+                    <div class="condition-pills">
+                        @foreach (var name in common)
+                        {
+                            <span class="condition-pill">
+                                <i class="bi @(ConditionPresets.GetIcon(name))"></i> @name
+                                <button class="icon-btn-ghost" title="Remove from selected" @onclick="() => RemoveCondition(name)"><i class="bi bi-x"></i></button>
+                            </span>
+                        }
+                    </div>
                 </div>
             }
 
@@ -96,6 +112,34 @@
     {
         EncounterService.AddConditionToMany(State.Current, State.BulkSelectedIds, name);
         State.NotifyChanged();
+    }
+
+    private void RemoveCondition(string name)
+    {
+        EncounterService.RemoveConditionFromMany(State.Current, State.BulkSelectedIds, name);
+        State.NotifyChanged();
+    }
+
+    /// <summary>Condition names shared by every currently bulk-selected combatant, so the GM can remove them as a group.</summary>
+    private List<string> CommonConditions
+    {
+        get
+        {
+            var selected = State.Current.Combatants.Where(c => State.BulkSelectedIds.Contains(c.Id)).ToList();
+            if (selected.Count == 0)
+            {
+                return [];
+            }
+
+            var common = selected[0].Conditions.Select(c => c.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            foreach (var combatant in selected.Skip(1))
+            {
+                var names = combatant.Conditions.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                common = common.Where(n => names.Contains(n)).ToList();
+            }
+
+            return common;
+        }
     }
 
     private void RollInitiative()

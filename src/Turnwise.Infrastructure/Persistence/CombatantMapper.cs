@@ -14,6 +14,7 @@ internal static class CombatantMapper
         MaxHp = combatant.MaxHp,
         MaxHpLocked = combatant.MaxHpLocked,
         CurrentHp = combatant.CurrentHp,
+        ArmorClass = combatant.ArmorClass,
         InitiativeFormula = combatant.InitiativeFormula,
         Initiative = combatant.Initiative,
         InitiativeLocked = combatant.InitiativeLocked,
@@ -39,7 +40,8 @@ internal static class CombatantMapper
             dto.PortraitBase64,
             dto.InitiativeFormula,
             dto.Initiative,
-            dto.InitiativeLocked);
+            dto.InitiativeLocked,
+            dto.ArmorClass);
 
         foreach (var roll in dto.NamedRolls)
         {
