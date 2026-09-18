@@ -41,6 +41,12 @@ public sealed class CombatantDto
     public string? InitiativeFormula { get; set; }
     public int? Initiative { get; set; }
     public bool InitiativeLocked { get; set; }
+
+    /// <summary>Enemy/Ally/RP tag, stored by name (like <see cref="CombatLogEntryDto.Type"/>) so it round-trips as a readable string. Absent on files saved before this field existed.</summary>
+    public string? Category { get; set; }
+
+    public string Notes { get; set; } = string.Empty;
+
     public List<NamedRollDto> NamedRolls { get; set; } = [];
     public List<CounterDto> Counters { get; set; } = [];
     public List<ConditionDto> Conditions { get; set; } = [];

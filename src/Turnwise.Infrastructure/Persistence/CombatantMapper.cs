@@ -1,4 +1,5 @@
 using Turnwise.Domain.Entities;
+using Turnwise.Domain.Enums;
 using Turnwise.Domain.ValueObjects;
 using Turnwise.Infrastructure.Persistence.Dtos;
 
@@ -18,6 +19,8 @@ internal static class CombatantMapper
         InitiativeFormula = combatant.InitiativeFormula,
         Initiative = combatant.Initiative,
         InitiativeLocked = combatant.InitiativeLocked,
+        Category = combatant.Category?.ToString(),
+        Notes = combatant.Notes,
         NamedRolls = combatant.NamedRolls
             .Select(r => new NamedRollDto { Id = r.Id, Name = r.Name, Formula = r.Formula.ToString() })
             .ToList(),
@@ -31,6 +34,8 @@ internal static class CombatantMapper
 
     public static Combatant ToDomain(CombatantDto dto)
     {
+        CombatantCategory? category = Enum.TryParse<CombatantCategory>(dto.Category, out var parsed) ? parsed : null;
+
         var combatant = Combatant.Restore(
             dto.Id,
             dto.Name,
@@ -41,7 +46,9 @@ internal static class CombatantMapper
             dto.InitiativeFormula,
             dto.Initiative,
             dto.InitiativeLocked,
-            dto.ArmorClass);
+            dto.ArmorClass,
+            category,
+            dto.Notes);
 
         foreach (var roll in dto.NamedRolls)
         {

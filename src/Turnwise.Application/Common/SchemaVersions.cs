@@ -6,10 +6,12 @@ namespace Turnwise.Application.Common;
 /// </summary>
 public static class SchemaVersions
 {
-    public const int CurrentCharacterSchemaVersion = 3;
+    /// <summary>Bumped for the addition of Combatant.Category/Notes - purely additive, so files at <see cref="MinSupportedCharacterSchemaVersion"/> still load fine (the new fields just come back empty).</summary>
+    public const int CurrentCharacterSchemaVersion = 4;
     public const int MinSupportedCharacterSchemaVersion = 3;
 
-    public const int CurrentEncounterSchemaVersion = 5;
+    /// <summary>Bumped alongside <see cref="CurrentCharacterSchemaVersion"/>, same reasoning (encounter files embed full combatant sheets).</summary>
+    public const int CurrentEncounterSchemaVersion = 6;
     public const int MinSupportedEncounterSchemaVersion = 5;
 
     /// <summary>Portrait images embedded as base64 are capped to keep character files a reasonable size.</summary>

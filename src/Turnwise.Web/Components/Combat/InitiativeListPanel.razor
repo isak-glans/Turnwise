@@ -67,6 +67,10 @@
                 </span>
                 <span class="combatant-main">
                     <span class="combatant-name" title="@combatant.Name">@combatant.Name</span>
+                    @if (combatant.Category is { } category)
+                    {
+                        <span class="category-pill category-@category.ToString().ToLowerInvariant()">@category</span>
+                    }
                     @if (combatant.Conditions.Count > 0)
                     {
                         <span class="combatant-conditions">

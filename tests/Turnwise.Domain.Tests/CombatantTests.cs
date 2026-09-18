@@ -168,6 +168,42 @@ public class CombatantTests
     }
 
     [Fact]
+    public void Category_DefaultsToNullAndIsSettable()
+    {
+        var combatant = new Combatant("Goblin", 10);
+        Assert.Null(combatant.Category);
+
+        combatant.Category = Turnwise.Domain.Enums.CombatantCategory.Enemy;
+
+        Assert.Equal(Turnwise.Domain.Enums.CombatantCategory.Enemy, combatant.Category);
+    }
+
+    [Fact]
+    public void Notes_LongerThanMaxIsSilentlyTruncated()
+    {
+        var combatant = new Combatant("Goblin", 10);
+
+        combatant.Notes = new string('x', Combatant.MaxNotesLength + 50);
+
+        Assert.Equal(Combatant.MaxNotesLength, combatant.Notes.Length);
+    }
+
+    [Fact]
+    public void Duplicate_CopiesCategoryAndNotes()
+    {
+        var original = new Combatant("Goblin", 10)
+        {
+            Category = Turnwise.Domain.Enums.CombatantCategory.Ally,
+            Notes = "Secretly a good goblin."
+        };
+
+        var clone = original.Duplicate();
+
+        Assert.Equal(Turnwise.Domain.Enums.CombatantCategory.Ally, clone.Category);
+        Assert.Equal("Secretly a good goblin.", clone.Notes);
+    }
+
+    [Fact]
     public void AddCounter_RejectsNegativeMax()
     {
         var combatant = new Combatant("Fighter", 20);

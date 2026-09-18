@@ -463,6 +463,15 @@ button:hover {
     letter-spacing: -0.01em;
 }
 
+.version-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--tw-text-faint);
+    background: var(--tw-inset-bg);
+    border-radius: 999px;
+    padding: 0.1rem 0.45rem;
+}
+
 .encounter-name-field {
     display: flex;
     align-items: center;
@@ -789,32 +798,80 @@ button:hover {
     border-radius: var(--tw-radius-sm);
 }
 
+.category-select {
+    margin-top: 0.3rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.15rem 0.4rem;
+    border-radius: 999px;
+    border: 1px solid var(--tw-panel-border);
+    background: var(--tw-inset-bg);
+    color: var(--tw-text-dim);
+}
+
+.category-select.category-enemy {
+    background: var(--tw-danger-soft);
+    border-color: var(--tw-danger-soft);
+    color: var(--tw-danger);
+}
+
+.category-select.category-ally {
+    background: var(--tw-success-soft);
+    border-color: var(--tw-success-soft);
+    color: var(--tw-success);
+}
+
+.category-select.category-rp {
+    background: var(--tw-warning-soft);
+    border-color: var(--tw-warning-soft);
+    color: #92660a;
+}
+
+.category-pill {
+    display: inline-block;
+    margin-top: 0.2rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    background: var(--tw-inset-bg);
+    color: var(--tw-text-dim);
+}
+
+.category-pill.category-enemy {
+    background: var(--tw-danger-soft);
+    color: var(--tw-danger);
+}
+
+.category-pill.category-ally {
+    background: var(--tw-success-soft);
+    color: var(--tw-success);
+}
+
+.category-pill.category-rp {
+    background: var(--tw-warning-soft);
+    color: #92660a;
+}
+
 .detail-subtitle {
     color: var(--tw-text-dim);
     font-size: 0.85rem;
 }
 
-.col-detail {
-    container-type: inline-size;
-}
-
-.detail-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0.6rem;
+.stats-section {
+    border: 1px solid var(--tw-panel-border);
+    border-radius: var(--tw-radius-md);
     margin-bottom: 0.75rem;
 }
 
-@container (min-width: 420px) {
-    .detail-grid {
-        grid-template-columns: 1fr 1fr;
-    }
+.stats-row {
+    padding: 0.65rem 0.75rem;
 }
 
-.stat-card {
-    border: 1px solid var(--tw-panel-border);
-    border-radius: var(--tw-radius-md);
-    padding: 0.65rem 0.75rem;
+.stats-divider {
+    border-top: 1px solid var(--tw-panel-border);
 }
 
 .stat-card-header {
@@ -1251,21 +1308,11 @@ button:hover {
     margin-top: 1rem;
 }
 
-.field-block-label {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--tw-text-dim);
-    margin-bottom: 0.4rem;
-}
-
-.description-textarea {
+.notes-textarea {
     width: 100%;
     box-sizing: border-box;
     resize: vertical;
-    min-height: 5rem;
+    min-height: 8rem;
 }
 
 /* Combat log */

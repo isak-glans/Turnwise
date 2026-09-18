@@ -51,6 +51,13 @@
             </div>
             <div class="detail-title">
                 <input class="name-input-lg" value="@combatant.Name" maxlength="@Combatant.MaxNameLength" @oninput="e => RenameCombatant(combatant, e)" />
+                <select class="category-select category-@(combatant.Category?.ToString().ToLowerInvariant() ?? "none")" title="Category" @onchange="e => SetCategory(combatant, e)">
+                    <option value="" selected="@(combatant.Category is null)">No category</option>
+                    @foreach (var category in Enum.GetValues<CombatantCategory>())
+                    {
+                        <option value="@category" selected="@(combatant.Category == category)">@category</option>
+                    }
+                </select>
             </div>
             @if (combatant.Id == State.Current.ActiveCombatantId)
             {
@@ -58,8 +65,8 @@
             }
         </div>
 
-        <div class="detail-grid">
-            <div class="stat-card">
+        <div class="stats-section">
+            <div class="stats-row">
                 <div class="stat-card-header">
                     <span class="stat-icon icon-danger"><i class="bi bi-heart-fill"></i></span> HP
                     <span class="ac-field" title="Armor Class">
@@ -91,7 +98,9 @@
                 <p class="hint-text">Negative = damage, positive = healing</p>
             </div>
 
-            <div class="stat-card">
+            <div class="stats-divider"></div>
+
+            <div class="stats-row">
                 <div class="stat-card-header">
                     <span class="stat-icon icon-accent"><i class="bi bi-dice-5-fill"></i></span> Initiative
                 </div>
@@ -128,6 +137,9 @@
                     {
                         <span class="tab-count">@combatant.Conditions.Count</span>
                     }
+                </button>
+                <button class="tab-button @(activeTab == "notes" ? "active" : "")" @onclick='() => State.SetActiveTab(combatant.Id, "notes")'>
+                    <i class="bi bi-journal-text"></i> Notes
                 </button>
             </div>
 
@@ -270,7 +282,7 @@
                     }
                 </div>
             }
-            else
+            else if (activeTab == "conditions")
             {
                 <div class="tab-content">
                     <div class="section-header">
@@ -313,6 +325,14 @@
                             <p class="empty-hint">All conditions already added.</p>
                         }
                     }
+                </div>
+            }
+            else
+            {
+                <div class="tab-content">
+                    <textarea class="notes-textarea" value="@combatant.Notes" maxlength="@Combatant.MaxNotesLength"
+                              placeholder="Personality, tactics, secrets - whatever's worth remembering about this character."
+                              @oninput="e => SetNotes(combatant, e)"></textarea>
                 </div>
             }
         </div>
@@ -431,6 +451,19 @@
         {
             _error = $"Failed to load image: {ex.Message}";
         }
+        State.NotifyChanged();
+    }
+
+    private void SetNotes(Combatant combatant, ChangeEventArgs e)
+    {
+        combatant.Notes = e.Value?.ToString() ?? "";
+        State.NotifyChanged();
+    }
+
+    private void SetCategory(Combatant combatant, ChangeEventArgs e)
+    {
+        var text = e.Value?.ToString();
+        combatant.Category = Enum.TryParse<CombatantCategory>(text, out var category) ? category : null;
         State.NotifyChanged();
     }
 

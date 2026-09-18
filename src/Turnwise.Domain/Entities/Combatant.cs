@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Turnwise.Domain.Enums;
 using Turnwise.Domain.ValueObjects;
 
 namespace Turnwise.Domain.Entities;
@@ -12,10 +13,14 @@ public sealed class Combatant
     /// <summary>Keeps the name usable as part of a save-file name - well under filesystem path-component limits.</summary>
     public const int MaxNameLength = 100;
 
+    /// <summary>Generous but bounded, so a GM's free-form notes can't blow up an encounter file.</summary>
+    public const int MaxNotesLength = 4000;
+
     private readonly List<NamedRoll> _namedRolls = [];
     private readonly List<Counter> _counters = [];
     private readonly List<Condition> _conditions = [];
     private string _name;
+    private string _notes = "";
 
     public Guid Id { get; }
 
@@ -28,6 +33,16 @@ public sealed class Combatant
     }
 
     public string? PortraitBase64 { get; set; }
+
+    /// <summary>Optional at-a-glance tag (Enemy/Ally/RP), shown under the name in the initiative list.</summary>
+    public CombatantCategory? Category { get; set; }
+
+    /// <summary>Free-form GM notes about this character. Silently truncated to <see cref="MaxNotesLength"/>, same reasoning as <see cref="Name"/>.</summary>
+    public string Notes
+    {
+        get => _notes;
+        set => _notes = TruncateNotes(value);
+    }
 
     public int MaxHp { get; private set; }
     public bool MaxHpLocked { get; set; }
@@ -70,6 +85,12 @@ public sealed class Combatant
         return text.Length > MaxNameLength ? text[..MaxNameLength] : text;
     }
 
+    private static string TruncateNotes(string? value)
+    {
+        var text = value ?? "";
+        return text.Length > MaxNotesLength ? text[..MaxNotesLength] : text;
+    }
+
     /// <summary>Reconstructs a combatant with exact saved state (used when loading from a file). Named rolls, counters and conditions are added separately.</summary>
     public static Combatant Restore(
         Guid id,
@@ -81,7 +102,9 @@ public sealed class Combatant
         string? initiativeFormula,
         int? initiative,
         bool initiativeLocked = false,
-        int? armorClass = null)
+        int? armorClass = null,
+        CombatantCategory? category = null,
+        string notes = "")
     {
         var combatant = new Combatant(name, maxHp, id)
         {
@@ -89,7 +112,9 @@ public sealed class Combatant
             PortraitBase64 = portraitBase64,
             InitiativeFormula = initiativeFormula,
             InitiativeLocked = initiativeLocked,
-            CurrentHp = Math.Clamp(currentHp, 0, maxHp)
+            CurrentHp = Math.Clamp(currentHp, 0, maxHp),
+            Category = category,
+            Notes = notes
         };
         combatant.SetInitiative(initiative);
         combatant.SetArmorClass(armorClass);
@@ -103,7 +128,7 @@ public sealed class Combatant
     /// </summary>
     public Combatant Duplicate()
     {
-        var clone = Restore(Guid.NewGuid(), Name, MaxHp, CurrentHp, MaxHpLocked, PortraitBase64, InitiativeFormula, null, InitiativeLocked, ArmorClass);
+        var clone = Restore(Guid.NewGuid(), Name, MaxHp, CurrentHp, MaxHpLocked, PortraitBase64, InitiativeFormula, null, InitiativeLocked, ArmorClass, Category, Notes);
 
         foreach (var roll in _namedRolls)
         {
