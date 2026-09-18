@@ -67,57 +67,69 @@
 
         <div class="stats-section">
             <div class="stats-row">
-                <div class="stat-card-header">
-                    <span class="stat-icon icon-danger"><i class="bi bi-heart-fill"></i></span> HP
-                    <span class="ac-field" title="Armor Class">
-                        <i class="bi bi-shield-fill"></i>
-                        <input type="number" class="ac-input" value="@combatant.ArmorClass" min="0" placeholder="AC"
-                               title="Armor Class (leave blank to hide)" @onchange="e => SetArmorClass(combatant, e)" />
-                    </span>
-                </div>
-                <div class="stat-big-row">
-                    <span class="stat-big">@combatant.CurrentHp</span>
-                    <span class="stat-big-sep">/</span>
-                    <input type="number" class="stat-big-input" value="@combatant.MaxHp" disabled="@combatant.MaxHpLocked"
-                           title="Max HP" @onchange="e => SetMaxHp(combatant, e)" />
-                    <button class="icon-btn @(combatant.MaxHpLocked ? "active" : "")"
-                            title="@(combatant.MaxHpLocked ? "Unlock max HP" : "Lock max HP")"
-                            @onclick="() => ToggleLock(combatant)">
-                        <i class="bi @(combatant.MaxHpLocked ? "bi-lock-fill" : "bi-unlock")"></i>
-                    </button>
+                <div class="stats-row-main">
+                    <div class="stats-label">
+                        <span class="stat-icon icon-danger"><i class="bi bi-heart-fill"></i></span>
+                        <span>HP</span>
+                    </div>
+                    <div class="stats-value">
+                        <span class="stat-big">@combatant.CurrentHp</span>
+                        <span class="stat-big-sep">/</span>
+                        <input type="number" class="stat-big-input" value="@combatant.MaxHp" disabled="@combatant.MaxHpLocked"
+                               title="Max HP" @onchange="e => SetMaxHp(combatant, e)" />
+                        <button class="icon-btn @(combatant.MaxHpLocked ? "active" : "")"
+                                title="@(combatant.MaxHpLocked ? "Unlock max HP" : "Lock max HP")"
+                                @onclick="() => ToggleLock(combatant)">
+                            <i class="bi @(combatant.MaxHpLocked ? "bi-lock-fill" : "bi-unlock")"></i>
+                        </button>
+                    </div>
+                    <div class="stats-control">
+                        <input @bind="_hpDelta" @bind:event="oninput" placeholder="e.g. -14 or +7"
+                               title="Negative = damage, positive = healing" @onkeydown="e => HandleHpDeltaKeyDown(e, combatant)" />
+                        <button class="btn btn-primary btn-sm" @onclick="() => ApplyHpDelta(combatant)">Apply</button>
+                    </div>
                 </div>
                 <div class="hp-bar large">
                     <div class="hp-bar-fill" style="width:@(HpPercent(combatant))%"></div>
                 </div>
-
-                <span class="field-label">Change HP</span>
-                <div class="field-row">
-                    <input @bind="_hpDelta" @bind:event="oninput" placeholder="e.g. -14 or +7" @onkeydown="e => HandleHpDeltaKeyDown(e, combatant)" />
-                    <button class="btn btn-primary" @onclick="() => ApplyHpDelta(combatant)">Apply</button>
-                </div>
-                <p class="hint-text">Negative = damage, positive = healing</p>
             </div>
 
             <div class="stats-divider"></div>
 
             <div class="stats-row">
-                <div class="stat-card-header">
-                    <span class="stat-icon icon-accent"><i class="bi bi-dice-5-fill"></i></span> Initiative
+                <div class="stats-row-main">
+                    <div class="stats-label">
+                        <span class="stat-icon icon-accent"><i class="bi bi-dice-5-fill"></i></span>
+                        <span>Initiative</span>
+                    </div>
+                    <div class="stats-value">
+                        <input type="number" class="stat-big-input" value="@combatant.Initiative" disabled="@combatant.InitiativeLocked"
+                               title="Current initiative" placeholder="—" @onchange="e => SetInitiative(combatant, e)" />
+                        <button class="icon-btn @(combatant.InitiativeLocked ? "active" : "")"
+                                title="@(combatant.InitiativeLocked ? "Unlock initiative" : "Lock initiative")"
+                                @onclick="() => ToggleInitiativeLock(combatant)">
+                            <i class="bi @(combatant.InitiativeLocked ? "bi-lock-fill" : "bi-unlock")"></i>
+                        </button>
+                    </div>
+                    <div class="stats-control">
+                        <input @bind="combatant.InitiativeFormula" placeholder="e.g. 1d20+2" maxlength="@DiceFormula.MaxNotationLength" />
+                        <button class="btn btn-sm" @onclick="() => RollInitiative(combatant)"><i class="bi bi-dice-6-fill"></i> Roll</button>
+                    </div>
                 </div>
-                <div class="stat-big-row">
-                    <input type="number" class="stat-big-input" value="@combatant.Initiative" disabled="@combatant.InitiativeLocked"
-                           title="Current initiative" placeholder="—" @onchange="e => SetInitiative(combatant, e)" />
-                    <button class="icon-btn @(combatant.InitiativeLocked ? "active" : "")"
-                            title="@(combatant.InitiativeLocked ? "Unlock initiative" : "Lock initiative")"
-                            @onclick="() => ToggleInitiativeLock(combatant)">
-                        <i class="bi @(combatant.InitiativeLocked ? "bi-lock-fill" : "bi-unlock")"></i>
-                    </button>
-                </div>
+            </div>
 
-                <span class="field-label">Initiative formula</span>
-                <div class="field-row">
-                    <input @bind="combatant.InitiativeFormula" placeholder="e.g. 1d20+2" maxlength="@DiceFormula.MaxNotationLength" />
-                    <button class="btn" @onclick="() => RollInitiative(combatant)"><i class="bi bi-dice-6-fill"></i> Roll</button>
+            <div class="stats-divider"></div>
+
+            <div class="stats-row">
+                <div class="stats-row-main">
+                    <div class="stats-label">
+                        <span class="stat-icon icon-accent"><i class="bi bi-shield-fill"></i></span>
+                        <span>Defence</span>
+                    </div>
+                    <div class="stats-value">
+                        <input type="number" class="stat-big-input narrow" value="@combatant.ArmorClass" min="0" placeholder="—"
+                               title="Defence (leave blank to hide)" @onchange="e => SetArmorClass(combatant, e)" />
+                    </div>
                 </div>
             </div>
         </div>

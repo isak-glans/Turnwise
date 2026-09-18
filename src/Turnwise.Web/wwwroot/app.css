@@ -885,13 +885,20 @@ button:hover {
     border-top: 1px solid var(--tw-panel-border);
 }
 
-.stat-card-header {
+.stats-row-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+}
+
+.stats-label {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     font-weight: 600;
     font-size: 0.85rem;
-    margin-bottom: 0.3rem;
+    flex: 0 0 6.5rem;
 }
 
 .stat-icon {
@@ -902,6 +909,7 @@ button:hover {
     height: 1.5rem;
     border-radius: 999px;
     font-size: 0.78rem;
+    flex-shrink: 0;
 }
 
 .stat-icon.icon-danger {
@@ -914,36 +922,16 @@ button:hover {
     color: var(--tw-accent);
 }
 
-.ac-field {
-    display: inline-flex;
+.stats-value {
+    display: flex;
     align-items: center;
     gap: 0.3rem;
-    margin-left: auto;
-    color: var(--tw-text-dim);
-    font-size: 0.85rem;
-}
-
-.ac-input {
-    width: 2.6rem;
-    padding: 0.2rem 0.3rem;
-    text-align: center;
+    flex: 0 0 auto;
 }
 
 .stat-big {
     font-size: 1.25rem;
     font-weight: 700;
-    margin-bottom: 0.15rem;
-}
-
-.stat-big-row {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    margin-bottom: 0.15rem;
-}
-
-.stat-big-row .stat-big {
-    margin-bottom: 0;
 }
 
 .stat-big-sep {
@@ -963,6 +951,10 @@ button:hover {
     width: 3rem;
 }
 
+.stat-big-input.narrow {
+    width: 2.4rem;
+}
+
 .stat-big-input:focus {
     box-shadow: none;
     background: var(--tw-inset-bg);
@@ -973,34 +965,22 @@ button:hover {
     color: var(--tw-text-faint);
 }
 
-.stat-big-row .icon-btn {
+.stats-value .icon-btn {
     width: 1.7rem;
     height: 1.7rem;
 }
 
-.field-label {
-    display: block;
-    font-size: 0.78rem;
-    color: var(--tw-text-dim);
-    margin-top: 0.4rem;
-    margin-bottom: 0.2rem;
-}
-
-.field-row {
+.stats-control {
     display: flex;
-    flex-wrap: wrap;
+    align-items: center;
     gap: 0.4rem;
+    flex: 1 1 12rem;
+    min-width: 12rem;
 }
 
-.field-row input {
+.stats-control input {
     flex: 1;
     min-width: 5rem;
-}
-
-.hint-text {
-    font-size: 0.75rem;
-    color: var(--tw-text-faint);
-    margin: 0.4rem 0 0 0;
 }
 
 .section {
