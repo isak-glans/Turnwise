@@ -18,6 +18,9 @@ public sealed class EncounterSessionState
     public Encounter Current { get; private set; } = new();
     public Guid? SelectedCombatantId { get; private set; }
 
+    /// <summary>Whether the initiative list's bulk-select checkboxes are shown. Off by default so they don't clutter the list until the GM asks for them.</summary>
+    public bool SelectModeOn { get; private set; }
+
     /// <summary>Whether a snapshot is available to restore via <see cref="Undo"/>.</summary>
     public bool CanUndo => _undoSnapshot is not null;
 
@@ -30,6 +33,7 @@ public sealed class EncounterSessionState
     {
         Current = encounter;
         SelectedCombatantId = Current.Combatants.FirstOrDefault()?.Id;
+        SelectModeOn = false;
         _bulkSelectedIds.Clear();
         _rollFilters.Clear();
         _counterFilters.Clear();
@@ -63,6 +67,25 @@ public sealed class EncounterSessionState
 
     public void ClearBulkSelection()
     {
+        _bulkSelectedIds.Clear();
+        NotifyChanged();
+    }
+
+    public void ToggleSelectMode()
+    {
+        SelectModeOn = !SelectModeOn;
+        if (!SelectModeOn)
+        {
+            _bulkSelectedIds.Clear();
+        }
+
+        NotifyChanged();
+    }
+
+    /// <summary>Turns select mode off and clears whatever was picked - what the bulk-actions panel's Close button does.</summary>
+    public void ExitSelectMode()
+    {
+        SelectModeOn = false;
         _bulkSelectedIds.Clear();
         NotifyChanged();
     }

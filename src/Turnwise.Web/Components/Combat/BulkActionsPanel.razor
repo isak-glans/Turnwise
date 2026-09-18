@@ -6,7 +6,7 @@
     <div class="card bulk-panel">
         <div class="bulk-panel-header">
             <span><i class="bi bi-check2-square"></i> @State.BulkSelectedIds.Count selected</span>
-            <button class="btn btn-sm" @onclick="() => State.ClearBulkSelection()"><i class="bi bi-x-lg"></i> Clear</button>
+            <button class="btn btn-sm" @onclick="() => State.ExitSelectMode()"><i class="bi bi-x-lg"></i> Close</button>
         </div>
 
         <div class="bulk-panel-actions">

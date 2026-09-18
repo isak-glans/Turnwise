@@ -10,6 +10,9 @@
             <button class="icon-btn" title="Previous turn" @onclick="PreviousTurn"><i class="bi bi-skip-start-fill"></i></button>
             <button class="icon-btn" title="Next turn" @onclick="NextTurn"><i class="bi bi-skip-end-fill"></i></button>
             <button class="icon-btn" title="Auto-sort by initiative" @onclick="AutoSort"><i class="bi bi-sort-numeric-down"></i></button>
+            <button class="icon-btn @(State.SelectModeOn ? "active" : "")" title="Toggle multi-select" @onclick="() => State.ToggleSelectMode()">
+                <i class="bi bi-check2-square"></i>
+            </button>
         </div>
     </div>
 
@@ -17,8 +20,15 @@
     {
         <div class="combatant-list-header">
             <span></span>
-            <input type="checkbox" class="bulk-select-checkbox" title="Select all"
-                   checked="@AllSelected" @onchange="ToggleSelectAll" />
+            @if (State.SelectModeOn)
+            {
+                <input type="checkbox" class="bulk-select-checkbox" title="Select all"
+                       checked="@AllSelected" @onchange="ToggleSelectAll" />
+            }
+            else
+            {
+                <span></span>
+            }
             <span></span>
             <span class="col-label">Init</span>
             <span></span>
@@ -41,9 +51,16 @@
                 @ondrop="() => Drop(index)"
                 @onclick="() => State.SelectCombatant(combatant.Id)">
                 <span class="drag-handle" title="Drag to reorder"><i class="bi bi-grip-vertical"></i></span>
-                <input type="checkbox" class="bulk-select-checkbox" title="Select for bulk action"
-                       checked="@State.IsBulkSelected(combatant.Id)"
-                       @onclick="() => State.ToggleBulkSelection(combatant.Id)" @onclick:stopPropagation />
+                @if (State.SelectModeOn)
+                {
+                    <input type="checkbox" class="bulk-select-checkbox" title="Select for bulk action"
+                           checked="@State.IsBulkSelected(combatant.Id)"
+                           @onclick="() => State.ToggleBulkSelection(combatant.Id)" @onclick:stopPropagation />
+                }
+                else
+                {
+                    <span></span>
+                }
                 @if (isActive)
                 {
                     <span class="turn-badge is-active">▶</span>

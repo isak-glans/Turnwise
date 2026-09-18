@@ -89,9 +89,6 @@
                         <button class="btn btn-primary btn-sm" @onclick="() => ApplyHpDelta(combatant)">Apply</button>
                     </div>
                 </div>
-                <div class="hp-bar large">
-                    <div class="hp-bar-fill" style="width:@(HpPercent(combatant))%"></div>
-                </div>
             </div>
 
             <div class="stats-divider"></div>
@@ -380,7 +377,6 @@
     private IJSObjectReference? _menuModule;
 
     private static bool HasPortrait(Combatant c) => !string.IsNullOrEmpty(c.PortraitBase64);
-    private static int HpPercent(Combatant c) => c.MaxHp == 0 ? 0 : (int)Math.Round(100.0 * c.CurrentHp / c.MaxHp);
 
     private static int IndexOf<T>(IReadOnlyList<T> list, T item)
     {
