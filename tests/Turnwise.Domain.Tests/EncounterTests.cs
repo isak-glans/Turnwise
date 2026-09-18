@@ -104,17 +104,21 @@ public class EncounterTests
     }
 
     [Fact]
-    public void GetLogForCombatant_FiltersSharedLog()
+    public void NextTurn_LogsRoundChangeOnlyWhenRoundWraps()
     {
         var encounter = new Encounter();
         var a = MakeCombatant("A");
         var b = MakeCombatant("B");
-        encounter.AddLogEntry(new CombatLogEntry(CombatLogEntryType.HpChange, "A takes damage", a.Id));
-        encounter.AddLogEntry(new CombatLogEntry(CombatLogEntryType.HpChange, "B takes damage", b.Id));
+        encounter.AddCombatant(a);
+        encounter.AddCombatant(b);
 
-        var aLog = encounter.GetLogForCombatant(a.Id).ToList();
+        encounter.NextTurn(); // -> A, round 1 (no wrap yet)
+        encounter.NextTurn(); // -> B, round 1 (no wrap yet)
+        Assert.Empty(encounter.Log);
 
-        Assert.Single(aLog);
-        Assert.Equal("A takes damage", aLog[0].Message);
+        encounter.NextTurn(); // wraps -> A, round 2
+        Assert.Single(encounter.Log);
+        Assert.Equal(CombatLogEntryType.RoundChange, encounter.Log[0].Type);
+        Assert.Equal("Round 2", encounter.Log[0].Message);
     }
 }

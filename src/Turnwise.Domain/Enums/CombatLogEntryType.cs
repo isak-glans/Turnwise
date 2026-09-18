@@ -4,5 +4,7 @@ public enum CombatLogEntryType
 {
     DiceRoll,
     HpChange,
-    InitiativeChange
+    InitiativeChange,
+    RoundChange,
+    ConditionChange
 }

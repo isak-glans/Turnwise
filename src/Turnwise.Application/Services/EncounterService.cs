@@ -106,12 +106,19 @@ public sealed class EncounterService(DiceRollingService diceRoller)
         return results;
     }
 
+    public void AddCondition(Encounter encounter, Guid combatantId, string conditionName)
+    {
+        var combatant = GetCombatant(encounter, combatantId);
+        combatant.AddCondition(conditionName);
+        encounter.AddLogEntry(new CombatLogEntry(CombatLogEntryType.ConditionChange, $"{combatant.Name} gains {conditionName}", combatant.Id));
+    }
+
     /// <summary>Adds the same condition to every given combatant.</summary>
     public void AddConditionToMany(Encounter encounter, IEnumerable<Guid> combatantIds, string conditionName)
     {
         foreach (var id in combatantIds.ToList())
         {
-            GetCombatant(encounter, id).AddCondition(conditionName);
+            AddCondition(encounter, id, conditionName);
         }
     }
 

@@ -158,7 +158,23 @@ public class EncounterServiceTests
     }
 
     [Fact]
-    public void AddConditionToMany_AddsConditionToEveryCombatant()
+    public void AddCondition_AddsConditionAndLogsEntry()
+    {
+        var service = MakeService();
+        var encounter = new Encounter();
+        var combatant = new Combatant("Goblin", 20);
+        encounter.AddCombatant(combatant);
+
+        service.AddCondition(encounter, combatant.Id, "Poisoned");
+
+        Assert.Equal("Poisoned", Assert.Single(combatant.Conditions).Name);
+        var entry = Assert.Single(encounter.Log);
+        Assert.Equal(CombatLogEntryType.ConditionChange, entry.Type);
+        Assert.Equal(combatant.Id, entry.CombatantId);
+    }
+
+    [Fact]
+    public void AddConditionToMany_AddsConditionToEveryCombatantAndLogsEach()
     {
         var service = MakeService();
         var encounter = new Encounter();
@@ -171,6 +187,7 @@ public class EncounterServiceTests
 
         Assert.Equal("Prone", Assert.Single(a.Conditions).Name);
         Assert.Equal("Prone", Assert.Single(b.Conditions).Name);
+        Assert.Equal(2, encounter.Log.Count);
     }
 
     [Fact]

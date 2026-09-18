@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Turnwise.Domain.Enums;
 
 namespace Turnwise.Domain.Entities;
 
@@ -127,13 +128,11 @@ public sealed class Encounter
         {
             nextIndex = 0;
             Round++;
+            AddLogEntry(new CombatLogEntry(CombatLogEntryType.RoundChange, $"Round {Round}", null));
         }
 
         ActiveCombatantId = _combatants[nextIndex].Id;
     }
 
     public void AddLogEntry(CombatLogEntry entry) => _log.Add(entry);
-
-    public IEnumerable<CombatLogEntry> GetLogForCombatant(Guid combatantId) =>
-        _log.Where(e => e.CombatantId == combatantId);
 }

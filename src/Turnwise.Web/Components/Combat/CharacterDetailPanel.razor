@@ -317,37 +317,6 @@
             }
         </div>
 
-        <div class="field-block">
-            @{ var logExpanded = State.IsLogExpanded(combatant.Id); }
-            <button class="collapsible-header" @onclick="() => State.SetLogExpanded(combatant.Id, !logExpanded)">
-                <span><i class="bi bi-file-text"></i> Combat Log (@combatant.Name)</span>
-                <span class="header-right">
-                    @{ var unread = State.UnreadLogCount(combatant.Id, State.Current.GetLogForCombatant(combatant.Id).Count(), logExpanded); }
-                    @if (!logExpanded && unread > 0)
-                    {
-                        <span class="unread-badge">@unread</span>
-                    }
-                    <i class="bi bi-chevron-down chevron @(logExpanded ? "open" : "")"></i>
-                </span>
-            </button>
-            @if (logExpanded)
-            {
-                <ul class="log-list">
-                    @foreach (var entry in State.Current.GetLogForCombatant(combatant.Id).OrderByDescending(e => e.Timestamp))
-                    {
-                        <li @key="entry.Id">
-                            <span class="log-time">@entry.Timestamp.ToLocalTime().ToString("HH:mm")</span>
-                            @entry.Message
-                            @if (!string.IsNullOrEmpty(entry.Result))
-                            {
-                                <strong class="log-result">&nbsp;→ @entry.Result</strong>
-                            }
-                        </li>
-                    }
-                </ul>
-            }
-        </div>
-
         @if (!string.IsNullOrEmpty(_error))
         {
             <div class="error-banner">@_error</div>
@@ -704,7 +673,7 @@
 
     private void AddCondition(Combatant combatant, string name)
     {
-        combatant.AddCondition(name);
+        EncounterService.AddCondition(State.Current, combatant.Id, name);
         _showAddCondition = false;
         State.NotifyChanged();
     }
