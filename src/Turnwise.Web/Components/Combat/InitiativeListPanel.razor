@@ -15,6 +15,7 @@
     @if (State.Current.Combatants.Count > 0)
     {
         <div class="combatant-list-header">
+            <span></span>
             <input type="checkbox" class="bulk-select-checkbox" title="Select all"
                    checked="@AllSelected" @onchange="ToggleSelectAll" />
             <span></span>
@@ -38,10 +39,18 @@
                 @ondragover:preventDefault
                 @ondrop="() => Drop(index)"
                 @onclick="() => State.SelectCombatant(combatant.Id)">
+                <span class="drag-handle" title="Drag to reorder"><i class="bi bi-grip-vertical"></i></span>
                 <input type="checkbox" class="bulk-select-checkbox" title="Select for bulk action"
                        checked="@State.IsBulkSelected(combatant.Id)"
                        @onclick="() => State.ToggleBulkSelection(combatant.Id)" @onclick:stopPropagation />
-                <span class="turn-badge @(isActive ? "is-active" : "")">@(isActive ? "▶" : "")</span>
+                @if (isActive)
+                {
+                    <span class="turn-badge is-active">▶</span>
+                }
+                else
+                {
+                    <span></span>
+                }
                 <span class="combatant-init" title="Initiative">
                     <span class="value">@(combatant.Initiative?.ToString() ?? "—")</span>
                 </span>

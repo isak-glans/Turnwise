@@ -85,7 +85,7 @@
 
                 <span class="field-label">Change HP</span>
                 <div class="field-row">
-                    <input @bind="_hpDelta" placeholder="e.g. -14 or +7" />
+                    <input @bind="_hpDelta" @bind:event="oninput" placeholder="e.g. -14 or +7" @onkeydown="e => HandleHpDeltaKeyDown(e, combatant)" />
                     <button class="btn btn-primary" @onclick="() => ApplyHpDelta(combatant)">Apply</button>
                 </div>
                 <p class="hint-text">Negative = damage, positive = healing</p>
@@ -116,130 +116,22 @@
         <div class="section">
             @{ var activeTab = State.GetActiveTab(combatant.Id); }
             <div class="tab-bar">
+                <button class="tab-button @(activeTab == "rolls" ? "active" : "")" @onclick='() => State.SetActiveTab(combatant.Id, "rolls")'>
+                    <i class="bi bi-dice-6"></i> Dice Rolls
+                </button>
                 <button class="tab-button @(activeTab == "counters" ? "active" : "")" @onclick='() => State.SetActiveTab(combatant.Id, "counters")'>
                     <i class="bi bi-stack"></i> Counters
                 </button>
                 <button class="tab-button @(activeTab == "conditions" ? "active" : "")" @onclick='() => State.SetActiveTab(combatant.Id, "conditions")'>
                     <i class="bi bi-exclamation-triangle-fill"></i> Conditions
-                </button>
-                <button class="tab-button @(activeTab == "rolls" ? "active" : "")" @onclick='() => State.SetActiveTab(combatant.Id, "rolls")'>
-                    <i class="bi bi-dice-6"></i> Dice Rolls
+                    @if (combatant.Conditions.Count > 0)
+                    {
+                        <span class="tab-count">@combatant.Conditions.Count</span>
+                    }
                 </button>
             </div>
 
-            @if (activeTab == "counters")
-            {
-                <div class="tab-content">
-                    <div class="section-header">
-                        <span></span>
-                        <button class="btn btn-sm" @onclick="() => _showAddCounter = !_showAddCounter"><i class="bi bi-plus-lg"></i> Add counter</button>
-                    </div>
-                    @if (combatant.Counters.Count > 1)
-                    {
-                        <div class="filter-row">
-                            <input class="filter-input" value="@State.GetCounterFilter(combatant.Id)"
-                                   @oninput='e => State.SetCounterFilter(combatant.Id, e.Value?.ToString() ?? "")' placeholder="Search counters..." />
-                            @if (!string.IsNullOrEmpty(State.GetCounterFilter(combatant.Id)))
-                            {
-                                <button class="icon-btn-ghost filter-clear" title="Clear filter" @onclick='() => State.SetCounterFilter(combatant.Id, "")'><i class="bi bi-x"></i></button>
-                            }
-                        </div>
-                    }
-                    <ul class="scrollable-list">
-                        @foreach (var counter in FilterCounters(combatant, State.GetCounterFilter(combatant.Id)))
-                        {
-                            var index = IndexOf(combatant.Counters, counter);
-                            var triggerId = $"menu-trigger-counter-{counter.Id}";
-                            <li class="counter-row" draggable="true"
-                                @ondragstart="() => _draggedCounterIndex = index"
-                                @ondragover:preventDefault
-                                @ondrop="() => DropCounter(combatant, index)">
-                                <span class="drag-handle" title="Drag to reorder"><i class="bi bi-grip-vertical"></i></span>
-                                <span class="stat-icon icon-accent"><i class="bi bi-hexagon-fill"></i></span>
-                                @if (_editingCounterId == counter.Id)
-                                {
-                                    <input class="inline-edit-input" @bind="_editCounterName" placeholder="Name" maxlength="@Counter.MaxNameLength" />
-                                    <input class="inline-edit-input narrow" type="number" min="0" @bind="_editCounterMax" placeholder="Max" />
-                                    <button class="btn btn-sm btn-primary" @onclick="() => SaveCounterEdit(counter)">Save</button>
-                                    <button class="btn btn-sm" @onclick="() => _editingCounterId = null">Cancel</button>
-                                }
-                                else
-                                {
-                                    <span class="counter-name">@counter.Name</span>
-                                    <button class="btn counter-step-btn" @onclick="() => AdjustCounter(counter, -1)"><i class="bi bi-dash"></i></button>
-                                    <span class="counter-value">@counter.Current / @counter.Max</span>
-                                    <button class="btn counter-step-btn" @onclick="() => AdjustCounter(counter, 1)"><i class="bi bi-plus"></i></button>
-                                    <div class="menu-wrap">
-                                        <button id="@triggerId" class="icon-btn-ghost" title="More" @onclick="() => ToggleMenu(triggerId)">
-                                            <i class="bi bi-three-dots"></i>
-                                        </button>
-                                        @if (IsMenuOpen(triggerId))
-                                        {
-                                            <div class="dropdown-menu row-menu" @ref="_menuRef">
-                                                <button class="dropdown-item" @onclick="() => StartEditCounter(counter)"><i class="bi bi-pencil"></i> Edit</button>
-                                                <button class="dropdown-item" @onclick="() => DuplicateCounter(combatant, counter.Id)"><i class="bi bi-copy"></i> Duplicate</button>
-                                                <button class="dropdown-item danger" @onclick="() => RemoveCounter(combatant, counter.Id)"><i class="bi bi-trash"></i> Delete</button>
-                                            </div>
-                                        }
-                                    </div>
-                                }
-                            </li>
-                        }
-                    </ul>
-                    @if (_showAddCounter)
-                    {
-                        <div class="add-inline-form">
-                            <input @bind="_newCounterName" placeholder="e.g. AC, Ammo, Ki" maxlength="@Counter.MaxNameLength" />
-                            <input type="number" min="0" @bind="_newCounterMax" placeholder="Max" />
-                            <button class="btn btn-primary" @onclick="() => AddCounter(combatant)">Add</button>
-                        </div>
-                    }
-                </div>
-            }
-            else if (activeTab == "conditions")
-            {
-                <div class="tab-content">
-                    <div class="section-header">
-                        <span></span>
-                        <button class="btn btn-sm" @onclick="() => _showAddCondition = !_showAddCondition">
-                            <i class="bi @(_showAddCondition ? "bi-x-lg" : "bi-plus-lg")"></i> @(_showAddCondition ? "Close" : "Add condition")
-                        </button>
-                    </div>
-                    @if (combatant.Conditions.Count > 0)
-                    {
-                        <div class="condition-pills">
-                            @foreach (var condition in combatant.Conditions)
-                            {
-                                <span class="condition-pill">
-                                    <i class="bi @(ConditionPresets.GetIcon(condition.Name))"></i>
-                                    @condition.Name
-                                    <button class="icon-btn-ghost" title="Remove condition" @onclick="() => RemoveCondition(combatant, condition.Id)"><i class="bi bi-x"></i></button>
-                                </span>
-                            }
-                        </div>
-                    }
-                    @if (_showAddCondition)
-                    {
-                        var available = AvailablePresets(combatant);
-                        @if (available.Count > 0)
-                        {
-                            <div class="condition-picker">
-                                @foreach (var preset in available)
-                                {
-                                    <button class="condition-picker-item" @onclick="() => AddCondition(combatant, preset)">
-                                        <i class="bi @(ConditionPresets.GetIcon(preset))"></i> @preset
-                                    </button>
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            <p class="empty-hint">All conditions already added.</p>
-                        }
-                    }
-                </div>
-            }
-            else
+            @if (activeTab == "rolls")
             {
                 <div class="tab-content">
                     <div class="section-header">
@@ -306,6 +198,120 @@
                             <input @bind="_newRollFormula" placeholder="1d20+4" maxlength="@DiceFormula.MaxNotationLength" />
                             <button class="btn btn-primary" @onclick="() => AddRoll(combatant)">Add</button>
                         </div>
+                    }
+                </div>
+            }
+            else if (activeTab == "counters")
+            {
+                <div class="tab-content">
+                    <div class="section-header">
+                        <span></span>
+                        <button class="btn btn-sm" @onclick="() => _showAddCounter = !_showAddCounter"><i class="bi bi-plus-lg"></i> Add counter</button>
+                    </div>
+                    @if (combatant.Counters.Count > 1)
+                    {
+                        <div class="filter-row">
+                            <input class="filter-input" value="@State.GetCounterFilter(combatant.Id)"
+                                   @oninput='e => State.SetCounterFilter(combatant.Id, e.Value?.ToString() ?? "")' placeholder="Search counters..." />
+                            @if (!string.IsNullOrEmpty(State.GetCounterFilter(combatant.Id)))
+                            {
+                                <button class="icon-btn-ghost filter-clear" title="Clear filter" @onclick='() => State.SetCounterFilter(combatant.Id, "")'><i class="bi bi-x"></i></button>
+                            }
+                        </div>
+                    }
+                    <ul class="scrollable-list">
+                        @foreach (var counter in FilterCounters(combatant, State.GetCounterFilter(combatant.Id)))
+                        {
+                            var index = IndexOf(combatant.Counters, counter);
+                            var triggerId = $"menu-trigger-counter-{counter.Id}";
+                            <li class="counter-row" draggable="true"
+                                @ondragstart="() => _draggedCounterIndex = index"
+                                @ondragover:preventDefault
+                                @ondrop="() => DropCounter(combatant, index)">
+                                <span class="drag-handle" title="Drag to reorder"><i class="bi bi-grip-vertical"></i></span>
+                                <span class="stat-icon icon-accent"><i class="bi bi-hexagon-fill"></i></span>
+                                @if (_editingCounterId == counter.Id)
+                                {
+                                    <input class="inline-edit-input" @bind="_editCounterName" placeholder="Name" maxlength="@Counter.MaxNameLength" />
+                                    <input class="inline-edit-input narrow" type="number" min="0" @bind="_editCounterMax" placeholder="Max" />
+                                    <button class="btn btn-sm btn-primary" @onclick="() => SaveCounterEdit(counter)">Save</button>
+                                    <button class="btn btn-sm" @onclick="() => _editingCounterId = null">Cancel</button>
+                                }
+                                else
+                                {
+                                    <span class="counter-name">@counter.Name</span>
+                                    <button class="btn counter-step-btn" @onclick="() => AdjustCounter(counter, -1)"><i class="bi bi-dash"></i></button>
+                                    <span class="counter-value">@counter.Current / @counter.Max</span>
+                                    <button class="btn counter-step-btn" @onclick="() => AdjustCounter(counter, 1)"><i class="bi bi-plus"></i></button>
+                                    <div class="menu-wrap">
+                                        <button id="@triggerId" class="icon-btn-ghost" title="More" @onclick="() => ToggleMenu(triggerId)">
+                                            <i class="bi bi-three-dots"></i>
+                                        </button>
+                                        @if (IsMenuOpen(triggerId))
+                                        {
+                                            <div class="dropdown-menu row-menu" @ref="_menuRef">
+                                                <button class="dropdown-item" @onclick="() => StartEditCounter(counter)"><i class="bi bi-pencil"></i> Edit</button>
+                                                <button class="dropdown-item" @onclick="() => DuplicateCounter(combatant, counter.Id)"><i class="bi bi-copy"></i> Duplicate</button>
+                                                <button class="dropdown-item danger" @onclick="() => RemoveCounter(combatant, counter.Id)"><i class="bi bi-trash"></i> Delete</button>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </li>
+                        }
+                    </ul>
+                    @if (_showAddCounter)
+                    {
+                        <div class="add-inline-form">
+                            <input @bind="_newCounterName" placeholder="e.g. Ammo, Ki, Rage" maxlength="@Counter.MaxNameLength" />
+                            <input type="number" min="0" @bind="_newCounterMax" placeholder="Max" />
+                            <button class="btn btn-primary" @onclick="() => AddCounter(combatant)">Add</button>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="tab-content">
+                    <div class="section-header">
+                        <span></span>
+                        <button class="btn btn-sm" @onclick="() => _showAddCondition = !_showAddCondition">
+                            <i class="bi @(_showAddCondition ? "bi-x-lg" : "bi-plus-lg")"></i> @(_showAddCondition ? "Close" : "Add condition")
+                        </button>
+                    </div>
+                    @if (combatant.Conditions.Count > 0)
+                    {
+                        <h4 class="subsection-heading">Active</h4>
+                        <div class="condition-pills">
+                            @foreach (var condition in combatant.Conditions)
+                            {
+                                <span class="condition-pill">
+                                    <i class="bi @(ConditionPresets.GetIcon(condition.Name))"></i>
+                                    @condition.Name
+                                    <button class="icon-btn-ghost" title="Remove condition" @onclick="() => RemoveCondition(combatant, condition.Id)"><i class="bi bi-x"></i></button>
+                                </span>
+                            }
+                        </div>
+                    }
+                    @if (_showAddCondition)
+                    {
+                        var available = AvailablePresets(combatant);
+                        @if (available.Count > 0)
+                        {
+                            <h4 class="subsection-heading">Available</h4>
+                            <div class="condition-picker">
+                                @foreach (var preset in available)
+                                {
+                                    <button class="condition-picker-item" @onclick="() => AddCondition(combatant, preset)">
+                                        <i class="bi @(ConditionPresets.GetIcon(preset))"></i> @preset
+                                    </button>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="empty-hint">All conditions already added.</p>
+                        }
                     }
                 </div>
             }
@@ -499,6 +505,14 @@
     {
         combatant.InitiativeLocked = !combatant.InitiativeLocked;
         State.NotifyChanged();
+    }
+
+    private void HandleHpDeltaKeyDown(KeyboardEventArgs e, Combatant combatant)
+    {
+        if (e.Key == "Enter")
+        {
+            ApplyHpDelta(combatant);
+        }
     }
 
     private void ApplyHpDelta(Combatant combatant)

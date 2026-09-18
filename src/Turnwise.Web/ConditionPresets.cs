@@ -11,6 +11,7 @@ public static class ConditionPresets
     [
         ("Blinded", "bi-eye-slash-fill"),
         ("Charmed", "bi-heart-fill"),
+        ("Concentration", "bi-bullseye"),
         ("Dead", "bi-x-circle-fill"),
         ("Deafened", "bi-ear-fill"),
         ("Exhaustion", "bi-battery-half"),

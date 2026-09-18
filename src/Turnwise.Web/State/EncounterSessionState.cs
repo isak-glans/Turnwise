@@ -133,8 +133,8 @@ public sealed class EncounterSessionState
 
     public void SetCounterFilter(Guid combatantId, string filter) => _counterFilters[combatantId] = filter;
 
-    /// <summary>Which of the Counters/Conditions/Dice Rolls tabs a combatant's panel was last showing. Defaults to "counters".</summary>
-    public string GetActiveTab(Guid combatantId) => _activeTabs.GetValueOrDefault(combatantId, "counters");
+    /// <summary>Which of the Dice Rolls/Counters/Conditions tabs a combatant's panel was last showing. Defaults to "rolls".</summary>
+    public string GetActiveTab(Guid combatantId) => _activeTabs.GetValueOrDefault(combatantId, "rolls");
 
     public void SetActiveTab(Guid combatantId, string tab) => _activeTabs[combatantId] = tab;
 
