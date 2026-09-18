@@ -3,7 +3,6 @@
     <Project Path="src/Turnwise.Application/Turnwise.Application.csproj" />
     <Project Path="src/Turnwise.Domain/Turnwise.Domain.csproj" />
     <Project Path="src/Turnwise.Infrastructure/Turnwise.Infrastructure.csproj" />
-    <Project Path="src/Turnwise.Web/Turnwise.Web.csproj" />
     <Project Path="src/Turnwise.Web.Client/Turnwise.Web.Client.csproj" />
   </Folder>
   <Folder Name="/tests/">

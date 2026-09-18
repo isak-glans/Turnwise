@@ -77,6 +77,13 @@ html, body {
     box-sizing: border-box;
 }
 
+@media (min-width: 901px) {
+    .app-shell {
+        height: 100vh;
+        overflow: hidden;
+    }
+}
+
 button, input, select, textarea {
     font-family: inherit;
     font-size: 0.9rem;
@@ -564,13 +571,21 @@ button:hover {
 .main-grid {
     display: grid;
     grid-template-columns: minmax(340px, 1fr) minmax(380px, 1.6fr);
+    grid-template-rows: minmax(0, 1fr);
     gap: 1rem;
     flex: 1;
     min-height: 0;
 }
 
+.main-grid .col {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
 .main-grid .panel {
-    max-height: calc(100vh - 230px);
+    flex: 1;
+    min-height: 0;
 }
 
 @media (max-width: 1200px) {
@@ -582,10 +597,6 @@ button:hover {
 @media (max-width: 900px) {
     .main-grid {
         grid-template-columns: 1fr;
-    }
-
-    .main-grid .panel {
-        max-height: none;
     }
 }
 
@@ -660,7 +671,8 @@ button:hover {
 }
 
 .combatant-card.active {
-    box-shadow: 0 0 0 2px var(--tw-accent);
+    background: var(--tw-success-soft);
+    box-shadow: 0 0 0 2px var(--tw-success);
 }
 
 .bulk-select-checkbox {
