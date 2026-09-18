@@ -57,6 +57,56 @@ public class EncounterTests
     }
 
     [Fact]
+    public void PreviousTurn_ReversesThroughOrderAndWrapsRoundDown()
+    {
+        var encounter = new Encounter();
+        var a = MakeCombatant("A");
+        var b = MakeCombatant("B");
+        encounter.AddCombatant(a);
+        encounter.AddCombatant(b);
+        encounter.NextTurn(); // -> A, round 1
+        encounter.NextTurn(); // -> B, round 1
+        encounter.NextTurn(); // wraps -> A, round 2
+
+        encounter.PreviousTurn(); // -> B, back to round 1
+        Assert.Equal(b.Id, encounter.ActiveCombatantId);
+        Assert.Equal(1, encounter.Round);
+
+        encounter.PreviousTurn(); // -> A, round 1
+        Assert.Equal(a.Id, encounter.ActiveCombatantId);
+        Assert.Equal(1, encounter.Round);
+    }
+
+    [Fact]
+    public void PreviousTurn_AtStartOfRound1_WrapsToLastCombatantWithoutGoingBelowRound1()
+    {
+        var encounter = new Encounter();
+        var a = MakeCombatant("A");
+        var b = MakeCombatant("B");
+        encounter.AddCombatant(a);
+        encounter.AddCombatant(b);
+        encounter.NextTurn(); // -> A, round 1
+
+        encounter.PreviousTurn(); // wraps -> B, round stays 1
+
+        Assert.Equal(b.Id, encounter.ActiveCombatantId);
+        Assert.Equal(1, encounter.Round);
+    }
+
+    [Fact]
+    public void PreviousTurn_WithNoActiveTurn_IsNoOp()
+    {
+        var encounter = new Encounter();
+        var a = MakeCombatant("A");
+        encounter.AddCombatant(a);
+
+        encounter.PreviousTurn();
+
+        Assert.Null(encounter.ActiveCombatantId);
+        Assert.Equal(1, encounter.Round);
+    }
+
+    [Fact]
     public void AutoSortByInitiative_OrdersHighestFirstAndSinksUnset()
     {
         var encounter = new Encounter();

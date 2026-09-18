@@ -7,6 +7,7 @@
         <h2><i class="bi bi-list-ol"></i> Initiative</h2>
         <div class="initiative-controls">
             <span class="round-badge">Round @State.Current.Round</span>
+            <button class="icon-btn" title="Previous turn" @onclick="PreviousTurn"><i class="bi bi-skip-start-fill"></i></button>
             <button class="icon-btn" title="Next turn" @onclick="NextTurn"><i class="bi bi-skip-end-fill"></i></button>
             <button class="icon-btn" title="Auto-sort by initiative" @onclick="AutoSort"><i class="bi bi-sort-numeric-down"></i></button>
         </div>
@@ -169,6 +170,12 @@
     private void NextTurn()
     {
         EncounterService.NextTurn(State.Current);
+        State.NotifyChanged();
+    }
+
+    private void PreviousTurn()
+    {
+        EncounterService.PreviousTurn(State.Current);
         State.NotifyChanged();
     }
 

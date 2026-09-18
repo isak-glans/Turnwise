@@ -134,5 +134,28 @@ public sealed class Encounter
         ActiveCombatantId = _combatants[nextIndex].Id;
     }
 
+    /// <summary>Reverses to the previous combatant in turn order, decrementing the round when it wraps back past the top. A no-op if no turn is currently active, since there is nothing to go back from.</summary>
+    public void PreviousTurn()
+    {
+        if (_combatants.Count == 0 || ActiveCombatantId is null)
+        {
+            return;
+        }
+
+        var currentIndex = _combatants.FindIndex(c => c.Id == ActiveCombatantId);
+        var previousIndex = currentIndex - 1;
+        if (previousIndex < 0)
+        {
+            previousIndex = _combatants.Count - 1;
+            if (Round > 1)
+            {
+                Round--;
+                AddLogEntry(new CombatLogEntry(CombatLogEntryType.RoundChange, $"Round {Round}", null));
+            }
+        }
+
+        ActiveCombatantId = _combatants[previousIndex].Id;
+    }
+
     public void AddLogEntry(CombatLogEntry entry) => _log.Add(entry);
 }

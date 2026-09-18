@@ -51,6 +51,8 @@ public sealed class EncounterService(DiceRollingService diceRoller)
 
     public void NextTurn(Encounter encounter) => encounter.NextTurn();
 
+    public void PreviousTurn(Encounter encounter) => encounter.PreviousTurn();
+
     public int ApplyHpDelta(Encounter encounter, Guid combatantId, int delta)
     {
         var combatant = GetCombatant(encounter, combatantId);
