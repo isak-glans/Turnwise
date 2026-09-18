@@ -171,4 +171,25 @@ public class EncounterTests
         Assert.Equal(CombatLogEntryType.RoundChange, encounter.Log[0].Type);
         Assert.Equal("Round 2", encounter.Log[0].Message);
     }
+
+    [Fact]
+    public void Clone_PreservesIdsAndIsIndependentOfTheOriginal()
+    {
+        var encounter = new Encounter("Goblin Ambush");
+        var a = MakeCombatant("A", 14);
+        encounter.AddCombatant(a);
+        encounter.NextTurn();
+        encounter.AddLogEntry(new CombatLogEntry(CombatLogEntryType.HpChange, "A takes damage", a.Id));
+
+        var clone = encounter.Clone();
+        a.ApplyHpDelta(-100);
+        encounter.NextTurn();
+
+        Assert.Equal(encounter.Id, clone.Id);
+        Assert.Equal("Goblin Ambush", clone.Name);
+        Assert.Equal(a.Id, clone.Combatants[0].Id);
+        Assert.Equal(10, clone.Combatants[0].CurrentHp); // unaffected by the later damage to `a`
+        Assert.Equal(1, clone.Round); // unaffected by the later NextTurn()
+        Assert.Single(clone.Log);
+    }
 }

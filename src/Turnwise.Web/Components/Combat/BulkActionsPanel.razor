@@ -83,6 +83,7 @@
     {
         if (int.TryParse(_flatDelta.Trim(), out var delta))
         {
+            State.CaptureUndoSnapshot();
             EncounterService.ApplyHpDeltaToMany(State.Current, State.BulkSelectedIds, delta);
             _flatDelta = "";
             _error = null;
@@ -103,6 +104,7 @@
             return;
         }
 
+        State.CaptureUndoSnapshot();
         EncounterService.ApplyRolledDamageToMany(State.Current, State.BulkSelectedIds, formula!, sharedRoll);
         _error = null;
         State.NotifyChanged();
@@ -110,12 +112,14 @@
 
     private void AddCondition(string name)
     {
+        State.CaptureUndoSnapshot();
         EncounterService.AddConditionToMany(State.Current, State.BulkSelectedIds, name);
         State.NotifyChanged();
     }
 
     private void RemoveCondition(string name)
     {
+        State.CaptureUndoSnapshot();
         EncounterService.RemoveConditionFromMany(State.Current, State.BulkSelectedIds, name);
         State.NotifyChanged();
     }

@@ -148,6 +148,34 @@ public sealed class Combatant
         return clone;
     }
 
+    /// <summary>
+    /// Deep copy with every Id (this combatant's own, and every roll/counter/condition's)
+    /// preserved exactly, unlike <see cref="Duplicate"/> which intentionally mints a new
+    /// identity. Used to snapshot state for undo, where restoring must reproduce the exact
+    /// prior combatant rather than spawn a new one.
+    /// </summary>
+    public Combatant Clone()
+    {
+        var clone = Restore(Id, Name, MaxHp, CurrentHp, MaxHpLocked, PortraitBase64, InitiativeFormula, Initiative, InitiativeLocked, ArmorClass, Category, Notes);
+
+        foreach (var roll in _namedRolls)
+        {
+            clone.AddNamedRoll(roll.Name, roll.Formula, roll.Id);
+        }
+
+        foreach (var counter in _counters)
+        {
+            clone.AddCounter(counter.Name, counter.Current, counter.Max, counter.ShowBar, counter.Id);
+        }
+
+        foreach (var condition in _conditions)
+        {
+            clone.AddCondition(condition.Name, condition.Id);
+        }
+
+        return clone;
+    }
+
     /// <summary>Applies a signed HP delta (negative = damage, positive = healing), clamped to [0, MaxHp].</summary>
     /// <returns>The HP change that was actually applied, after clamping.</returns>
     public int ApplyHpDelta(int delta)

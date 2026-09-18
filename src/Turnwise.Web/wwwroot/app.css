@@ -245,6 +245,17 @@ button:hover {
     border-color: var(--tw-accent);
 }
 
+.icon-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.icon-btn:disabled:hover {
+    background: #fff;
+    color: var(--tw-text-dim);
+    border-color: var(--tw-panel-border);
+}
+
 .icon-btn.active {
     background: var(--tw-accent-soft);
     color: var(--tw-accent);

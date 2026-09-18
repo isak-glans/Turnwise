@@ -13,9 +13,13 @@ public sealed class EncounterSessionState
     private readonly Dictionary<Guid, string> _rollFilters = new();
     private readonly Dictionary<Guid, string> _counterFilters = new();
     private readonly Dictionary<Guid, string> _activeTabs = new();
+    private Encounter? _undoSnapshot;
 
     public Encounter Current { get; private set; } = new();
     public Guid? SelectedCombatantId { get; private set; }
+
+    /// <summary>Whether a snapshot is available to restore via <see cref="Undo"/>.</summary>
+    public bool CanUndo => _undoSnapshot is not null;
 
     /// <summary>Combatants checked for a bulk action (damage, condition, initiative roll) - independent of <see cref="SelectedCombatantId"/>.</summary>
     public IReadOnlySet<Guid> BulkSelectedIds => _bulkSelectedIds;
@@ -30,6 +34,7 @@ public sealed class EncounterSessionState
         _rollFilters.Clear();
         _counterFilters.Clear();
         _activeTabs.Clear();
+        _undoSnapshot = null;
         NotifyChanged();
     }
 
@@ -94,6 +99,27 @@ public sealed class EncounterSessionState
     public string GetActiveTab(Guid combatantId) => _activeTabs.GetValueOrDefault(combatantId, "rolls");
 
     public void SetActiveTab(Guid combatantId, string tab) => _activeTabs[combatantId] = tab;
+
+    /// <summary>
+    /// Snapshots the current encounter so a following <see cref="Undo"/> can restore it. Call
+    /// this immediately before an in-combat HP/condition/counter/dice-roll action. A single
+    /// slot, not a stack: capturing again overwrites whatever was captured before, so only the
+    /// most recent action can be undone.
+    /// </summary>
+    public void CaptureUndoSnapshot() => _undoSnapshot = Current.Clone();
+
+    /// <summary>Restores the last captured snapshot, if any. A no-op if nothing is captured.</summary>
+    public void Undo()
+    {
+        if (_undoSnapshot is null)
+        {
+            return;
+        }
+
+        Current = _undoSnapshot;
+        _undoSnapshot = null;
+        NotifyChanged();
+    }
 
     public void NotifyChanged() => Changed?.Invoke();
 }

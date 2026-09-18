@@ -158,4 +158,22 @@ public sealed class Encounter
     }
 
     public void AddLogEntry(CombatLogEntry entry) => _log.Add(entry);
+
+    /// <summary>Deep, identity-preserving copy of the whole encounter (every combatant, sub-entity and log entry keeps its Id). Used to snapshot state for undo.</summary>
+    public Encounter Clone()
+    {
+        var clone = Restore(Id, Name, Round, ActiveCombatantId);
+
+        foreach (var combatant in _combatants)
+        {
+            clone.AddCombatant(combatant.Clone());
+        }
+
+        foreach (var entry in _log)
+        {
+            clone.AddLogEntry(new CombatLogEntry(entry.Type, entry.Message, entry.CombatantId, entry.Timestamp, entry.Id, entry.Result));
+        }
+
+        return clone;
+    }
 }

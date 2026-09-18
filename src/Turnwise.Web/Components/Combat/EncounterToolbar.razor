@@ -16,6 +16,9 @@
     </div>
 
     <div class="header-actions">
+        <button class="icon-btn" title="Undo last action (Ctrl+Z)" disabled="@(!State.CanUndo)" @onclick="() => State.Undo()">
+            <i class="bi bi-arrow-counterclockwise"></i>
+        </button>
         <div class="menu-wrap">
             <button id="menu-trigger-settings" class="icon-btn" title="Encounter settings" @onclick="ToggleMenu">
                 <i class="bi bi-gear-fill"></i>

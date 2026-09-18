@@ -204,6 +204,40 @@ public class CombatantTests
     }
 
     [Fact]
+    public void Clone_PreservesIdAndEverySubEntityId_UnlikeDuplicate()
+    {
+        var original = new Combatant("Goblin", 10);
+        original.SetInitiative(14);
+        original.ApplyHpDelta(-3);
+        var roll = original.AddNamedRoll("Scimitar", Turnwise.Domain.ValueObjects.DiceFormula.Parse("1d6+2"));
+        var counter = original.AddCounter("Rage", 1, 2);
+        var condition = original.AddCondition("Poisoned");
+
+        var clone = original.Clone();
+
+        Assert.Equal(original.Id, clone.Id);
+        Assert.Equal(original.CurrentHp, clone.CurrentHp);
+        Assert.Equal(original.Initiative, clone.Initiative);
+        Assert.Equal(roll.Id, Assert.Single(clone.NamedRolls).Id);
+        Assert.Equal(counter.Id, Assert.Single(clone.Counters).Id);
+        Assert.Equal(condition.Id, Assert.Single(clone.Conditions).Id);
+    }
+
+    [Fact]
+    public void Clone_IsIndependentOfTheOriginal()
+    {
+        var original = new Combatant("Goblin", 10);
+        var counter = original.AddCounter("Rage", 1, 2);
+
+        var clone = original.Clone();
+        original.ApplyHpDelta(-5);
+        counter.Adjust(1);
+
+        Assert.Equal(10, clone.CurrentHp);
+        Assert.Equal(1, clone.Counters[0].Current);
+    }
+
+    [Fact]
     public void AddCounter_RejectsNegativeMax()
     {
         var combatant = new Combatant("Fighter", 20);

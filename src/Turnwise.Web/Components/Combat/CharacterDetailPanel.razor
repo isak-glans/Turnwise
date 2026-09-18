@@ -521,6 +521,7 @@
     {
         if (int.TryParse(_hpDelta.Trim(), out var delta))
         {
+            State.CaptureUndoSnapshot();
             EncounterService.ApplyHpDelta(State.Current, combatant.Id, delta);
             _hpDelta = "";
             _error = null;
@@ -548,6 +549,7 @@
 
     private void RollNamed(Combatant combatant, Guid rollId)
     {
+        State.CaptureUndoSnapshot();
         EncounterService.RollNamedRoll(State.Current, combatant.Id, rollId);
         State.NotifyChanged();
     }
@@ -629,6 +631,7 @@
 
     private void AdjustCounter(Counter counter, int delta)
     {
+        State.CaptureUndoSnapshot();
         counter.Adjust(delta);
         State.NotifyChanged();
     }
@@ -694,6 +697,7 @@
 
     private void RemoveCondition(Combatant combatant, Guid conditionId)
     {
+        State.CaptureUndoSnapshot();
         combatant.RemoveCondition(conditionId);
         State.NotifyChanged();
     }
@@ -706,6 +710,7 @@
 
     private void AddCondition(Combatant combatant, string name)
     {
+        State.CaptureUndoSnapshot();
         EncounterService.AddCondition(State.Current, combatant.Id, name);
         _showAddCondition = false;
         State.NotifyChanged();
