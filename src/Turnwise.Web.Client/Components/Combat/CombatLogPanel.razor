@@ -1,0 +1,77 @@
+@inherits EncounterStateAwareComponentBase
+
+<div class="panel card log-panel">
+    <div class="log-toggle">
+        <i class="bi bi-file-text"></i>
+        Combat Log (@State.Current.Log.Count)
+    </div>
+
+    @if (State.Current.Log.Count > 1)
+    {
+        <div class="log-filter-row">
+            @foreach (var option in FilterOptions)
+            {
+                <button class="log-filter-chip @(_filterType == option.Type ? "active" : "")" @onclick="() => _filterType = option.Type">
+                    <i class="bi @(IconFor(option.Type))"></i> @option.Label
+                </button>
+            }
+        </div>
+    }
+
+    <ul class="log-list">
+        @foreach (var entry in FilteredLog())
+        {
+            <li @key="entry.Id">
+                <span class="log-time">@entry.Timestamp.ToLocalTime().ToString("HH:mm")</span>
+                <i class="bi @(IconFor(entry.Type)) log-type-icon" title="@FormatType(entry.Type)"></i>
+                @entry.Message
+                @if (!string.IsNullOrEmpty(entry.Result))
+                {
+                    <strong class="log-result">&nbsp;→ @entry.Result</strong>
+                }
+            </li>
+        }
+    </ul>
+</div>
+
+@code {
+    private CombatLogEntryType? _filterType;
+
+    private static readonly (CombatLogEntryType? Type, string Label)[] FilterOptions =
+    [
+        (null, "All"),
+        (CombatLogEntryType.HpChange, "HP"),
+        (CombatLogEntryType.InitiativeChange, "Initiative"),
+        (CombatLogEntryType.DiceRoll, "Rolls"),
+        (CombatLogEntryType.ConditionChange, "Conditions"),
+        (CombatLogEntryType.RoundChange, "Rounds")
+    ];
+
+    private IEnumerable<CombatLogEntry> FilteredLog()
+    {
+        var entries = _filterType is { } type
+            ? State.Current.Log.Where(e => e.Type == type)
+            : State.Current.Log;
+        return entries.OrderByDescending(e => e.Timestamp);
+    }
+
+    private static string IconFor(CombatLogEntryType? type) => type switch
+    {
+        CombatLogEntryType.HpChange => "bi-heart-fill",
+        CombatLogEntryType.InitiativeChange => "bi-dice-5-fill",
+        CombatLogEntryType.DiceRoll => "bi-dice-6-fill",
+        CombatLogEntryType.ConditionChange => "bi-exclamation-triangle-fill",
+        CombatLogEntryType.RoundChange => "bi-flag-fill",
+        _ => "bi-list-ul"
+    };
+
+    private static string FormatType(CombatLogEntryType type) => type switch
+    {
+        CombatLogEntryType.HpChange => "HP",
+        CombatLogEntryType.InitiativeChange => "Initiative",
+        CombatLogEntryType.DiceRoll => "Roll",
+        CombatLogEntryType.ConditionChange => "Condition",
+        CombatLogEntryType.RoundChange => "Round",
+        _ => type.ToString()
+    };
+}

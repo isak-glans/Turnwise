@@ -1,0 +1,754 @@
+@inherits EncounterStateAwareComponentBase
+@inject EncounterService EncounterService
+@inject CharacterTemplateService CharacterTemplateService
+@inject FileDownloadService FileDownload
+@inject IJSRuntime JS
+
+<div class="panel card">
+    @if (State.SelectedCombatant is null)
+    {
+        <div class="panel-header">
+            <h2><i class="bi bi-person-badge"></i> Character</h2>
+        </div>
+        <p class="empty-hint">Select a combatant from the initiative list.</p>
+    }
+    else
+    {
+        var combatant = State.SelectedCombatant;
+        <div class="panel-header">
+            <h2><i class="bi bi-person-badge"></i> Character</h2>
+            <div class="menu-wrap">
+                <button id="menu-trigger-char" class="icon-btn" title="More actions" @onclick='() => ToggleMenu("menu-trigger-char")'>
+                    <i class="bi bi-three-dots-vertical"></i>
+                </button>
+                @if (IsMenuOpen("menu-trigger-char"))
+                {
+                    <div class="dropdown-menu" @ref="_menuRef">
+                        <button class="dropdown-item" @onclick="() => SaveAsTemplate(combatant)"><i class="bi bi-download"></i> Save as template</button>
+                        <button class="dropdown-item" @onclick="() => DuplicateCombatant(combatant)"><i class="bi bi-copy"></i> Duplicate</button>
+                        <button class="dropdown-item danger" @onclick="() => RemoveCombatant(combatant)"><i class="bi bi-trash"></i> Remove from encounter</button>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="detail-header">
+            <div class="avatar-wrap">
+                <span class="avatar avatar-lg" style="@(HasPortrait(combatant) ? "" : $"background:{AvatarHelper.ColorFor(combatant.Id)}")">
+                    @if (HasPortrait(combatant))
+                    {
+                        <img src="data:image/png;base64,@combatant.PortraitBase64" alt="" />
+                    }
+                    else
+                    {
+                        @AvatarHelper.InitialsFor(combatant.Name)
+                    }
+                </span>
+                <label class="avatar-edit-btn" title="Change portrait">
+                    <i class="bi bi-pencil"></i>
+                    <InputFile OnChange="e => ChangePortrait(combatant, e)" accept="image/*" />
+                </label>
+            </div>
+            <div class="detail-title">
+                <input class="name-input-lg" value="@combatant.Name" maxlength="@Combatant.MaxNameLength" @oninput="e => RenameCombatant(combatant, e)" />
+                <select class="category-select category-@(combatant.Category?.ToString().ToLowerInvariant() ?? "none")" title="Category" @onchange="e => SetCategory(combatant, e)">
+                    <option value="" selected="@(combatant.Category is null)">No category</option>
+                    @foreach (var category in Enum.GetValues<CombatantCategory>())
+                    {
+                        <option value="@category" selected="@(combatant.Category == category)">@category</option>
+                    }
+                </select>
+            </div>
+            @if (combatant.Id == State.Current.ActiveCombatantId)
+            {
+                <span class="badge badge-active"><i class="bi bi-lightning-fill"></i> Active</span>
+            }
+        </div>
+
+        <div class="stats-section">
+            <div class="stats-row">
+                <div class="stats-row-main">
+                    <div class="stats-label">
+                        <span class="stat-icon icon-danger"><i class="bi bi-heart-fill"></i></span>
+                        <span>HP</span>
+                    </div>
+                    <div class="stats-value">
+                        <span class="stat-big">@combatant.CurrentHp</span>
+                        <span class="stat-big-sep">/</span>
+                        <input type="number" class="stat-big-input" value="@combatant.MaxHp" disabled="@combatant.MaxHpLocked"
+                               title="Max HP" @onchange="e => SetMaxHp(combatant, e)" />
+                        <button class="icon-btn @(combatant.MaxHpLocked ? "active" : "")"
+                                title="@(combatant.MaxHpLocked ? "Unlock max HP" : "Lock max HP")"
+                                @onclick="() => ToggleLock(combatant)">
+                            <i class="bi @(combatant.MaxHpLocked ? "bi-lock-fill" : "bi-unlock")"></i>
+                        </button>
+                    </div>
+                    <div class="stats-control">
+                        <input @bind="_hpDelta" @bind:event="oninput" placeholder="e.g. -14 or +7"
+                               title="Negative = damage, positive = healing" @onkeydown="e => HandleHpDeltaKeyDown(e, combatant)" />
+                        <button class="btn btn-primary btn-sm" @onclick="() => ApplyHpDelta(combatant)">Apply</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-divider"></div>
+
+            <div class="stats-row">
+                <div class="stats-row-main">
+                    <div class="stats-label">
+                        <span class="stat-icon icon-accent"><i class="bi bi-dice-5-fill"></i></span>
+                        <span>Initiative</span>
+                    </div>
+                    <div class="stats-value">
+                        <input type="number" class="stat-big-input" value="@combatant.Initiative" disabled="@combatant.InitiativeLocked"
+                               title="Current initiative" placeholder="—" @onchange="e => SetInitiative(combatant, e)" />
+                        <button class="icon-btn @(combatant.InitiativeLocked ? "active" : "")"
+                                title="@(combatant.InitiativeLocked ? "Unlock initiative" : "Lock initiative")"
+                                @onclick="() => ToggleInitiativeLock(combatant)">
+                            <i class="bi @(combatant.InitiativeLocked ? "bi-lock-fill" : "bi-unlock")"></i>
+                        </button>
+                    </div>
+                    <div class="stats-control">
+                        <input @bind="combatant.InitiativeFormula" placeholder="e.g. 1d20+2" maxlength="@DiceFormula.MaxNotationLength" />
+                        <button class="btn btn-sm" @onclick="() => RollInitiative(combatant)"><i class="bi bi-dice-6-fill"></i> Roll</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-divider"></div>
+
+            <div class="stats-row">
+                <div class="stats-row-main">
+                    <div class="stats-label">
+                        <span class="stat-icon icon-accent"><i class="bi bi-shield-fill"></i></span>
+                        <span>Defence</span>
+                    </div>
+                    <div class="stats-value">
+                        <input type="number" class="stat-big-input narrow" value="@combatant.ArmorClass" min="0" placeholder="—"
+                               title="Defence (leave blank to hide)" @onchange="e => SetArmorClass(combatant, e)" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            @{ var activeTab = State.GetActiveTab(combatant.Id); }
+            <div class="tab-bar">
+                <button class="tab-button @(activeTab == "rolls" ? "active" : "")" @onclick='() => State.SetActiveTab(combatant.Id, "rolls")'>
+                    <i class="bi bi-dice-6"></i> Dice Rolls
+                </button>
+                <button class="tab-button @(activeTab == "counters" ? "active" : "")" @onclick='() => State.SetActiveTab(combatant.Id, "counters")'>
+                    <i class="bi bi-stack"></i> Counters
+                </button>
+                <button class="tab-button @(activeTab == "conditions" ? "active" : "")" @onclick='() => State.SetActiveTab(combatant.Id, "conditions")'>
+                    <i class="bi bi-exclamation-triangle-fill"></i> Conditions
+                    @if (combatant.Conditions.Count > 0)
+                    {
+                        <span class="tab-count">@combatant.Conditions.Count</span>
+                    }
+                </button>
+                <button class="tab-button @(activeTab == "notes" ? "active" : "")" @onclick='() => State.SetActiveTab(combatant.Id, "notes")'>
+                    <i class="bi bi-journal-text"></i> Notes
+                </button>
+            </div>
+
+            @if (activeTab == "rolls")
+            {
+                <div class="tab-content">
+                    <div class="section-header">
+                        <span></span>
+                        <button class="btn btn-sm" @onclick="() => _showAddRoll = !_showAddRoll"><i class="bi bi-plus-lg"></i> Add roll</button>
+                    </div>
+                    @if (combatant.NamedRolls.Count > 1)
+                    {
+                        <div class="filter-row">
+                            <input class="filter-input" value="@State.GetRollFilter(combatant.Id)"
+                                   @oninput='e => State.SetRollFilter(combatant.Id, e.Value?.ToString() ?? "")' placeholder="Search rolls..." />
+                            @if (!string.IsNullOrEmpty(State.GetRollFilter(combatant.Id)))
+                            {
+                                <button class="icon-btn-ghost filter-clear" title="Clear filter" @onclick='() => State.SetRollFilter(combatant.Id, "")'><i class="bi bi-x"></i></button>
+                            }
+                        </div>
+                    }
+                    <ul class="scrollable-list">
+                        @foreach (var roll in FilterRolls(combatant, State.GetRollFilter(combatant.Id)))
+                        {
+                            var index = IndexOf(combatant.NamedRolls, roll);
+                            var triggerId = $"menu-trigger-roll-{roll.Id}";
+                            <li class="roll-row" draggable="true"
+                                @ondragstart="() => _draggedRollIndex = index"
+                                @ondragover:preventDefault
+                                @ondrop="() => DropRoll(combatant, index)">
+                                <span class="drag-handle" title="Drag to reorder"><i class="bi bi-grip-vertical"></i></span>
+                                <span class="stat-icon icon-accent"><i class="bi bi-dice-6-fill"></i></span>
+                                @if (_editingRollId == roll.Id)
+                                {
+                                    <input class="inline-edit-input" @bind="_editRollName" placeholder="Name" maxlength="@NamedRoll.MaxNameLength" />
+                                    <input class="inline-edit-input" @bind="_editRollFormula" placeholder="1d20+4" maxlength="@DiceFormula.MaxNotationLength" />
+                                    <button class="btn btn-sm btn-primary" @onclick="() => SaveRollEdit(roll)">Save</button>
+                                    <button class="btn btn-sm" @onclick="() => _editingRollId = null">Cancel</button>
+                                }
+                                else
+                                {
+                                    <span class="roll-info">
+                                        <span class="roll-name">@roll.Name</span>
+                                    </span>
+                                    <span class="formula-box">@roll.Formula</span>
+                                    <button class="btn btn-sm" @onclick="() => RollNamed(combatant, roll.Id)">Roll</button>
+                                    <div class="menu-wrap">
+                                        <button id="@triggerId" class="icon-btn-ghost" title="More" @onclick="() => ToggleMenu(triggerId)">
+                                            <i class="bi bi-three-dots"></i>
+                                        </button>
+                                        @if (IsMenuOpen(triggerId))
+                                        {
+                                            <div class="dropdown-menu row-menu" @ref="_menuRef">
+                                                <button class="dropdown-item" @onclick="() => StartEditRoll(roll)"><i class="bi bi-pencil"></i> Edit</button>
+                                                <button class="dropdown-item" @onclick="() => DuplicateRoll(combatant, roll.Id)"><i class="bi bi-copy"></i> Duplicate</button>
+                                                <button class="dropdown-item danger" @onclick="() => RemoveRoll(combatant, roll.Id)"><i class="bi bi-trash"></i> Delete</button>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </li>
+                        }
+                    </ul>
+                    @if (_showAddRoll)
+                    {
+                        <div class="add-inline-form">
+                            <input @bind="_newRollName" placeholder="Name" maxlength="@NamedRoll.MaxNameLength" />
+                            <input @bind="_newRollFormula" placeholder="1d20+4" maxlength="@DiceFormula.MaxNotationLength" />
+                            <button class="btn btn-primary" @onclick="() => AddRoll(combatant)">Add</button>
+                        </div>
+                    }
+                </div>
+            }
+            else if (activeTab == "counters")
+            {
+                <div class="tab-content">
+                    <div class="section-header">
+                        <span></span>
+                        <button class="btn btn-sm" @onclick="() => _showAddCounter = !_showAddCounter"><i class="bi bi-plus-lg"></i> Add counter</button>
+                    </div>
+                    @if (combatant.Counters.Count > 1)
+                    {
+                        <div class="filter-row">
+                            <input class="filter-input" value="@State.GetCounterFilter(combatant.Id)"
+                                   @oninput='e => State.SetCounterFilter(combatant.Id, e.Value?.ToString() ?? "")' placeholder="Search counters..." />
+                            @if (!string.IsNullOrEmpty(State.GetCounterFilter(combatant.Id)))
+                            {
+                                <button class="icon-btn-ghost filter-clear" title="Clear filter" @onclick='() => State.SetCounterFilter(combatant.Id, "")'><i class="bi bi-x"></i></button>
+                            }
+                        </div>
+                    }
+                    <ul class="scrollable-list">
+                        @foreach (var counter in FilterCounters(combatant, State.GetCounterFilter(combatant.Id)))
+                        {
+                            var index = IndexOf(combatant.Counters, counter);
+                            var triggerId = $"menu-trigger-counter-{counter.Id}";
+                            <li class="counter-row" draggable="true"
+                                @ondragstart="() => _draggedCounterIndex = index"
+                                @ondragover:preventDefault
+                                @ondrop="() => DropCounter(combatant, index)">
+                                <span class="drag-handle" title="Drag to reorder"><i class="bi bi-grip-vertical"></i></span>
+                                <span class="stat-icon icon-accent"><i class="bi bi-hexagon-fill"></i></span>
+                                @if (_editingCounterId == counter.Id)
+                                {
+                                    <input class="inline-edit-input" @bind="_editCounterName" placeholder="Name" maxlength="@Counter.MaxNameLength" />
+                                    <input class="inline-edit-input narrow" type="number" min="0" @bind="_editCounterMax" placeholder="Max" />
+                                    <button class="btn btn-sm btn-primary" @onclick="() => SaveCounterEdit(counter)">Save</button>
+                                    <button class="btn btn-sm" @onclick="() => _editingCounterId = null">Cancel</button>
+                                }
+                                else
+                                {
+                                    <span class="counter-name">@counter.Name</span>
+                                    <button class="btn counter-step-btn" @onclick="() => AdjustCounter(counter, -1)"><i class="bi bi-dash"></i></button>
+                                    <span class="counter-value">@counter.Current / @counter.Max</span>
+                                    <button class="btn counter-step-btn" @onclick="() => AdjustCounter(counter, 1)"><i class="bi bi-plus"></i></button>
+                                    <div class="menu-wrap">
+                                        <button id="@triggerId" class="icon-btn-ghost" title="More" @onclick="() => ToggleMenu(triggerId)">
+                                            <i class="bi bi-three-dots"></i>
+                                        </button>
+                                        @if (IsMenuOpen(triggerId))
+                                        {
+                                            <div class="dropdown-menu row-menu" @ref="_menuRef">
+                                                <button class="dropdown-item" @onclick="() => StartEditCounter(counter)"><i class="bi bi-pencil"></i> Edit</button>
+                                                <button class="dropdown-item" @onclick="() => DuplicateCounter(combatant, counter.Id)"><i class="bi bi-copy"></i> Duplicate</button>
+                                                <button class="dropdown-item danger" @onclick="() => RemoveCounter(combatant, counter.Id)"><i class="bi bi-trash"></i> Delete</button>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </li>
+                        }
+                    </ul>
+                    @if (_showAddCounter)
+                    {
+                        <div class="add-inline-form">
+                            <input @bind="_newCounterName" placeholder="e.g. Ammo, Ki, Rage" maxlength="@Counter.MaxNameLength" />
+                            <input type="number" min="0" @bind="_newCounterMax" placeholder="Max" />
+                            <button class="btn btn-primary" @onclick="() => AddCounter(combatant)">Add</button>
+                        </div>
+                    }
+                </div>
+            }
+            else if (activeTab == "conditions")
+            {
+                <div class="tab-content">
+                    <div class="section-header">
+                        <span></span>
+                        <button class="btn btn-sm" @onclick="() => _showAddCondition = !_showAddCondition">
+                            <i class="bi @(_showAddCondition ? "bi-x-lg" : "bi-plus-lg")"></i> @(_showAddCondition ? "Close" : "Add condition")
+                        </button>
+                    </div>
+                    @if (combatant.Conditions.Count > 0)
+                    {
+                        <h4 class="subsection-heading">Active</h4>
+                        <div class="condition-pills">
+                            @foreach (var condition in combatant.Conditions)
+                            {
+                                <span class="condition-pill">
+                                    <i class="bi @(ConditionPresets.GetIcon(condition.Name))"></i>
+                                    @condition.Name
+                                    <button class="icon-btn-ghost" title="Remove condition" @onclick="() => RemoveCondition(combatant, condition.Id)"><i class="bi bi-x"></i></button>
+                                </span>
+                            }
+                        </div>
+                    }
+                    @if (_showAddCondition)
+                    {
+                        var available = AvailablePresets(combatant);
+                        @if (available.Count > 0)
+                        {
+                            <h4 class="subsection-heading">Available</h4>
+                            <div class="condition-picker">
+                                @foreach (var preset in available)
+                                {
+                                    <button class="condition-picker-item" @onclick="() => AddCondition(combatant, preset)">
+                                        <i class="bi @(ConditionPresets.GetIcon(preset))"></i> @preset
+                                    </button>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="empty-hint">All conditions already added.</p>
+                        }
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="tab-content">
+                    <textarea class="notes-textarea" value="@combatant.Notes" maxlength="@Combatant.MaxNotesLength"
+                              placeholder="Personality, tactics, secrets - whatever's worth remembering about this character."
+                              @oninput="e => SetNotes(combatant, e)"></textarea>
+                </div>
+            }
+        </div>
+
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="error-banner">@_error</div>
+        }
+    }
+</div>
+
+@code {
+    private string _hpDelta = "";
+    private bool _showAddRoll;
+    private bool _showAddCounter;
+    private bool _showAddCondition;
+    private string _newRollName = "";
+    private string _newRollFormula = "";
+    private string _newCounterName = "";
+    private int _newCounterMax = 3;
+    private int? _draggedRollIndex;
+    private int? _draggedCounterIndex;
+    private Guid? _editingRollId;
+    private string _editRollName = "";
+    private string _editRollFormula = "";
+    private Guid? _editingCounterId;
+    private string _editCounterName = "";
+    private int _editCounterMax;
+    private string? _error;
+
+    private string? _openMenuTriggerId;
+    private ElementReference _menuRef;
+    private IJSObjectReference? _menuModule;
+
+    private static bool HasPortrait(Combatant c) => !string.IsNullOrEmpty(c.PortraitBase64);
+
+    private static int IndexOf<T>(IReadOnlyList<T> list, T item)
+    {
+        for (var i = 0; i < list.Count; i++)
+        {
+            if (Equals(list[i], item))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static IEnumerable<NamedRoll> FilterRolls(Combatant combatant, string filter) =>
+        string.IsNullOrWhiteSpace(filter)
+            ? combatant.NamedRolls
+            : combatant.NamedRolls.Where(r => r.Name.Contains(filter, StringComparison.OrdinalIgnoreCase));
+
+    private static IEnumerable<Counter> FilterCounters(Combatant combatant, string filter) =>
+        string.IsNullOrWhiteSpace(filter)
+            ? combatant.Counters
+            : combatant.Counters.Where(c => c.Name.Contains(filter, StringComparison.OrdinalIgnoreCase));
+
+    private bool IsMenuOpen(string triggerId) => _openMenuTriggerId == triggerId;
+
+    private void ToggleMenu(string triggerId) =>
+        _openMenuTriggerId = _openMenuTriggerId == triggerId ? null : triggerId;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (_openMenuTriggerId is not null)
+        {
+            try
+            {
+                _menuModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/dropdownMenu.js");
+                await _menuModule.InvokeVoidAsync("positionMenu", _openMenuTriggerId, _menuRef);
+            }
+            catch (JSDisconnectedException)
+            {
+                // circuit is going away - nothing to position
+            }
+        }
+    }
+
+    protected override async ValueTask DisposeAsyncCore()
+    {
+        if (_menuModule is not null)
+        {
+            try
+            {
+                await _menuModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // circuit already gone
+            }
+        }
+    }
+
+    private void RenameCombatant(Combatant combatant, ChangeEventArgs e)
+    {
+        combatant.Name = e.Value?.ToString() ?? combatant.Name;
+        State.NotifyChanged();
+    }
+
+    private async Task ChangePortrait(Combatant combatant, InputFileChangeEventArgs e)
+    {
+        try
+        {
+            const int maxBytes = 1_500_000;
+            using var stream = e.File.OpenReadStream(maxAllowedSize: maxBytes);
+            using var memory = new MemoryStream();
+            await stream.CopyToAsync(memory);
+            combatant.PortraitBase64 = Convert.ToBase64String(memory.ToArray());
+            _error = null;
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to load image: {ex.Message}";
+        }
+        State.NotifyChanged();
+    }
+
+    private void SetNotes(Combatant combatant, ChangeEventArgs e)
+    {
+        combatant.Notes = e.Value?.ToString() ?? "";
+        State.NotifyChanged();
+    }
+
+    private void SetCategory(Combatant combatant, ChangeEventArgs e)
+    {
+        var text = e.Value?.ToString();
+        combatant.Category = Enum.TryParse<CombatantCategory>(text, out var category) ? category : null;
+        State.NotifyChanged();
+    }
+
+    private void ToggleLock(Combatant combatant)
+    {
+        combatant.MaxHpLocked = !combatant.MaxHpLocked;
+        State.NotifyChanged();
+    }
+
+    private void SetMaxHp(Combatant combatant, ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var value) && value >= 0)
+        {
+            combatant.SetMaxHp(value);
+        }
+        State.NotifyChanged();
+    }
+
+    private void SetArmorClass(Combatant combatant, ChangeEventArgs e)
+    {
+        var text = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            combatant.SetArmorClass(null);
+        }
+        else if (int.TryParse(text, out var value) && value >= 0)
+        {
+            combatant.SetArmorClass(value);
+        }
+        State.NotifyChanged();
+    }
+
+    private void SetInitiative(Combatant combatant, ChangeEventArgs e)
+    {
+        var text = e.Value?.ToString();
+        combatant.SetInitiative(int.TryParse(text, out var value) ? value : null);
+        State.NotifyChanged();
+    }
+
+    private void ToggleInitiativeLock(Combatant combatant)
+    {
+        combatant.InitiativeLocked = !combatant.InitiativeLocked;
+        State.NotifyChanged();
+    }
+
+    private void HandleHpDeltaKeyDown(KeyboardEventArgs e, Combatant combatant)
+    {
+        if (e.Key == "Enter")
+        {
+            ApplyHpDelta(combatant);
+        }
+    }
+
+    private void ApplyHpDelta(Combatant combatant)
+    {
+        if (int.TryParse(_hpDelta.Trim(), out var delta))
+        {
+            State.CaptureUndoSnapshot();
+            EncounterService.ApplyHpDelta(State.Current, combatant.Id, delta);
+            _hpDelta = "";
+            _error = null;
+        }
+        else
+        {
+            _error = $"'{_hpDelta}' is not a valid HP delta (e.g. -14 or +7).";
+        }
+        State.NotifyChanged();
+    }
+
+    private void RollInitiative(Combatant combatant)
+    {
+        try
+        {
+            EncounterService.RollInitiative(State.Current, combatant.Id);
+            _error = null;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        State.NotifyChanged();
+    }
+
+    private void RollNamed(Combatant combatant, Guid rollId)
+    {
+        State.CaptureUndoSnapshot();
+        EncounterService.RollNamedRoll(State.Current, combatant.Id, rollId);
+        State.NotifyChanged();
+    }
+
+    private void RemoveRoll(Combatant combatant, Guid rollId)
+    {
+        combatant.RemoveNamedRoll(rollId);
+        _openMenuTriggerId = null;
+        State.NotifyChanged();
+    }
+
+    private void AddRoll(Combatant combatant)
+    {
+        if (string.IsNullOrWhiteSpace(_newRollName))
+        {
+            return;
+        }
+
+        if (!DiceFormula.TryParse(_newRollFormula, out var formula))
+        {
+            _error = $"'{_newRollFormula}' is not a valid dice formula (e.g. 1d20+4).";
+            State.NotifyChanged();
+            return;
+        }
+
+        combatant.AddNamedRoll(_newRollName, formula!);
+        _newRollName = "";
+        _newRollFormula = "";
+        _showAddRoll = false;
+        _error = null;
+        State.NotifyChanged();
+    }
+
+    private void DropRoll(Combatant combatant, int targetIndex)
+    {
+        if (_draggedRollIndex is { } from && from != targetIndex)
+        {
+            combatant.ReorderNamedRoll(from, targetIndex);
+        }
+        _draggedRollIndex = null;
+        State.NotifyChanged();
+    }
+
+    private void StartEditRoll(NamedRoll roll)
+    {
+        _editingRollId = roll.Id;
+        _editRollName = roll.Name;
+        _editRollFormula = roll.Formula.ToString();
+        _openMenuTriggerId = null;
+    }
+
+    private void SaveRollEdit(NamedRoll roll)
+    {
+        if (string.IsNullOrWhiteSpace(_editRollName))
+        {
+            return;
+        }
+
+        if (!DiceFormula.TryParse(_editRollFormula, out var formula))
+        {
+            _error = $"'{_editRollFormula}' is not a valid dice formula (e.g. 1d20+4).";
+            State.NotifyChanged();
+            return;
+        }
+
+        roll.Name = _editRollName.Trim();
+        roll.Formula = formula!;
+        _editingRollId = null;
+        _error = null;
+        State.NotifyChanged();
+    }
+
+    private void DuplicateRoll(Combatant combatant, Guid rollId)
+    {
+        combatant.DuplicateNamedRoll(rollId);
+        _openMenuTriggerId = null;
+        State.NotifyChanged();
+    }
+
+    private void AdjustCounter(Counter counter, int delta)
+    {
+        State.CaptureUndoSnapshot();
+        counter.Adjust(delta);
+        State.NotifyChanged();
+    }
+
+    private void RemoveCounter(Combatant combatant, Guid counterId)
+    {
+        combatant.RemoveCounter(counterId);
+        _openMenuTriggerId = null;
+        State.NotifyChanged();
+    }
+
+    private void AddCounter(Combatant combatant)
+    {
+        if (string.IsNullOrWhiteSpace(_newCounterName) || _newCounterMax < 0)
+        {
+            return;
+        }
+
+        combatant.AddCounter(_newCounterName, _newCounterMax, _newCounterMax);
+        _newCounterName = "";
+        _newCounterMax = 3;
+        _showAddCounter = false;
+        State.NotifyChanged();
+    }
+
+    private void DropCounter(Combatant combatant, int targetIndex)
+    {
+        if (_draggedCounterIndex is { } from && from != targetIndex)
+        {
+            combatant.ReorderCounter(from, targetIndex);
+        }
+        _draggedCounterIndex = null;
+        State.NotifyChanged();
+    }
+
+    private void StartEditCounter(Counter counter)
+    {
+        _editingCounterId = counter.Id;
+        _editCounterName = counter.Name;
+        _editCounterMax = counter.Max;
+        _openMenuTriggerId = null;
+    }
+
+    private void SaveCounterEdit(Counter counter)
+    {
+        if (string.IsNullOrWhiteSpace(_editCounterName) || _editCounterMax < 0)
+        {
+            return;
+        }
+
+        counter.Name = _editCounterName.Trim();
+        counter.SetMax(_editCounterMax);
+        _editingCounterId = null;
+        State.NotifyChanged();
+    }
+
+    private void DuplicateCounter(Combatant combatant, Guid counterId)
+    {
+        combatant.DuplicateCounter(counterId);
+        _openMenuTriggerId = null;
+        State.NotifyChanged();
+    }
+
+    private void RemoveCondition(Combatant combatant, Guid conditionId)
+    {
+        State.CaptureUndoSnapshot();
+        combatant.RemoveCondition(conditionId);
+        State.NotifyChanged();
+    }
+
+    private static List<string> AvailablePresets(Combatant combatant)
+    {
+        var existing = combatant.Conditions.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return ConditionPresets.Names.Where(n => !existing.Contains(n)).ToList();
+    }
+
+    private void AddCondition(Combatant combatant, string name)
+    {
+        State.CaptureUndoSnapshot();
+        EncounterService.AddCondition(State.Current, combatant.Id, name);
+        _showAddCondition = false;
+        State.NotifyChanged();
+    }
+
+    private void DuplicateCombatant(Combatant combatant)
+    {
+        var clone = EncounterService.DuplicateCombatant(State.Current, combatant.Id);
+        _openMenuTriggerId = null;
+        State.SelectCombatant(clone.Id);
+    }
+
+    private void RemoveCombatant(Combatant combatant)
+    {
+        EncounterService.RemoveCombatant(State.Current, combatant.Id);
+        State.RemoveFromBulkSelection(combatant.Id);
+        _openMenuTriggerId = null;
+        State.SelectCombatant(null);
+    }
+
+    private async Task SaveAsTemplate(Combatant combatant)
+    {
+        using var stream = new MemoryStream();
+        await CharacterTemplateService.SaveAsTemplateAsync(combatant, stream);
+        var fileName = $"{Sanitize(combatant.Name)}.turnwise-character.json";
+        await FileDownload.DownloadAsync(fileName, "application/json", stream.ToArray());
+        _openMenuTriggerId = null;
+        State.NotifyChanged();
+    }
+
+    private static string Sanitize(string name) =>
+        string.Concat(name.Where(c => !Path.GetInvalidFileNameChars().Contains(c))).Replace(' ', '-');
+}

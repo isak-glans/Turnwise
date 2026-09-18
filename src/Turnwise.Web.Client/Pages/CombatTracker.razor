@@ -1,0 +1,75 @@
+@page "/"
+@inherits EncounterStateAwareComponentBase
+@inject IJSRuntime JS
+
+<PageTitle>Turnwise</PageTitle>
+
+<div class="app-shell">
+    <EncounterToolbar />
+    <BulkActionsPanel />
+
+    <div class="main-grid">
+        <section class="col col-initiative">
+            <InitiativeListPanel />
+        </section>
+        <section class="col col-detail">
+            <CharacterDetailPanel @key="State.SelectedCombatantId" />
+        </section>
+    </div>
+
+    <CombatLogPanel />
+</div>
+
+@code {
+    private IJSObjectReference? _keyboardModule;
+    private IJSObjectReference? _keyboardHandler;
+    private DotNetObjectReference<CombatTracker>? _dotNetRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            _keyboardModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/keyboardShortcuts.js");
+            _keyboardHandler = await _keyboardModule.InvokeAsync<IJSObjectReference>("registerKeyboardShortcuts", _dotNetRef);
+        }
+    }
+
+    [JSInvokable]
+    public void OnEscapePressed() => State.ClearBulkSelection();
+
+    [JSInvokable]
+    public void OnUndoShortcut() => State.Undo();
+
+    protected override async ValueTask DisposeAsyncCore()
+    {
+        if (_keyboardHandler is not null)
+        {
+            try
+            {
+                await _keyboardHandler.InvokeVoidAsync("dispose");
+                await _keyboardHandler.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // circuit already gone
+            }
+        }
+
+        if (_keyboardModule is not null)
+        {
+            try
+            {
+                await _keyboardModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // circuit already gone
+            }
+        }
+
+        _dotNetRef?.Dispose();
+    }
+}

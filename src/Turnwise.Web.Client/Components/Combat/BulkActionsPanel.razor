@@ -1,0 +1,154 @@
+@inherits EncounterStateAwareComponentBase
+@inject EncounterService EncounterService
+
+@if (State.BulkSelectedIds.Count > 1)
+{
+    <div class="card bulk-panel">
+        <div class="bulk-panel-header">
+            <span><i class="bi bi-check2-square"></i> @State.BulkSelectedIds.Count selected</span>
+            <button class="btn btn-sm" @onclick="() => State.ExitSelectMode()"><i class="bi bi-x-lg"></i> Close</button>
+        </div>
+
+        <div class="bulk-panel-actions">
+            <div class="bulk-action-group">
+                <span class="bulk-action-label"><i class="bi bi-heart-fill"></i> Damage</span>
+                <input class="bulk-narrow-input" @bind="_flatDelta" placeholder="e.g. -10 or +5" />
+                <button class="btn btn-sm" @onclick="ApplyFlat">Apply</button>
+                <span class="bulk-action-sep">or</span>
+                <input class="bulk-narrow-input" @bind="_damageFormula" placeholder="2d6" maxlength="@DiceFormula.MaxNotationLength" />
+                <button class="btn btn-sm" title="One roll, same damage to everyone" @onclick="() => RollDamage(sharedRoll: true)">
+                    <i class="bi bi-dice-6-fill"></i> Roll (shared)
+                </button>
+                <button class="btn btn-sm" title="A separate roll for each combatant" @onclick="() => RollDamage(sharedRoll: false)">
+                    <i class="bi bi-dice-6-fill"></i> Roll (individually)
+                </button>
+            </div>
+
+            <div class="bulk-action-group">
+                <span class="bulk-action-label"><i class="bi bi-exclamation-triangle-fill"></i> Condition</span>
+                <button class="btn btn-sm" @onclick="() => _showConditionPicker = !_showConditionPicker">
+                    <i class="bi bi-plus-lg"></i> Add to selected
+                </button>
+            </div>
+            @if (_showConditionPicker)
+            {
+                <div class="condition-picker">
+                    @foreach (var preset in ConditionPresets.Names)
+                    {
+                        <button class="condition-picker-item" @onclick="() => AddCondition(preset)">
+                            <i class="bi @(ConditionPresets.GetIcon(preset))"></i> @preset
+                        </button>
+                    }
+                </div>
+            }
+            @{ var common = CommonConditions; }
+            @if (common.Count > 0)
+            {
+                <div class="bulk-action-group">
+                    <span class="bulk-action-label"><i class="bi bi-exclamation-triangle-fill"></i> Shared</span>
+                    <div class="condition-pills">
+                        @foreach (var name in common)
+                        {
+                            <span class="condition-pill">
+                                <i class="bi @(ConditionPresets.GetIcon(name))"></i> @name
+                                <button class="icon-btn-ghost" title="Remove from selected" @onclick="() => RemoveCondition(name)"><i class="bi bi-x"></i></button>
+                            </span>
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="bulk-action-group">
+                <span class="bulk-action-label"><i class="bi bi-dice-5-fill"></i> Initiative</span>
+                <button class="btn btn-sm" @onclick="RollInitiative">
+                    <i class="bi bi-dice-6-fill"></i> Roll individually for selected
+                </button>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="error-banner">@_error</div>
+        }
+    </div>
+}
+
+@code {
+    private string _flatDelta = "";
+    private string _damageFormula = "2d6";
+    private bool _showConditionPicker;
+    private string? _error;
+
+    private void ApplyFlat()
+    {
+        if (int.TryParse(_flatDelta.Trim(), out var delta))
+        {
+            State.CaptureUndoSnapshot();
+            EncounterService.ApplyHpDeltaToMany(State.Current, State.BulkSelectedIds, delta);
+            _flatDelta = "";
+            _error = null;
+        }
+        else
+        {
+            _error = $"'{_flatDelta}' is not a valid HP delta (e.g. -10 or +5).";
+        }
+        State.NotifyChanged();
+    }
+
+    private void RollDamage(bool sharedRoll)
+    {
+        if (!DiceFormula.TryParse(_damageFormula, out var formula))
+        {
+            _error = $"'{_damageFormula}' is not a valid dice formula (e.g. 2d6).";
+            State.NotifyChanged();
+            return;
+        }
+
+        State.CaptureUndoSnapshot();
+        EncounterService.ApplyRolledDamageToMany(State.Current, State.BulkSelectedIds, formula!, sharedRoll);
+        _error = null;
+        State.NotifyChanged();
+    }
+
+    private void AddCondition(string name)
+    {
+        State.CaptureUndoSnapshot();
+        EncounterService.AddConditionToMany(State.Current, State.BulkSelectedIds, name);
+        State.NotifyChanged();
+    }
+
+    private void RemoveCondition(string name)
+    {
+        State.CaptureUndoSnapshot();
+        EncounterService.RemoveConditionFromMany(State.Current, State.BulkSelectedIds, name);
+        State.NotifyChanged();
+    }
+
+    /// <summary>Condition names shared by every currently bulk-selected combatant, so the GM can remove them as a group.</summary>
+    private List<string> CommonConditions
+    {
+        get
+        {
+            var selected = State.Current.Combatants.Where(c => State.BulkSelectedIds.Contains(c.Id)).ToList();
+            if (selected.Count == 0)
+            {
+                return [];
+            }
+
+            var common = selected[0].Conditions.Select(c => c.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            foreach (var combatant in selected.Skip(1))
+            {
+                var names = combatant.Conditions.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                common = common.Where(n => names.Contains(n)).ToList();
+            }
+
+            return common;
+        }
+    }
+
+    private void RollInitiative()
+    {
+        EncounterService.RollInitiativeForMany(State.Current, State.BulkSelectedIds);
+        State.NotifyChanged();
+    }
+}

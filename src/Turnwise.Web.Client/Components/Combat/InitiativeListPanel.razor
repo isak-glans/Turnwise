@@ -1,0 +1,251 @@
+@inherits EncounterStateAwareComponentBase
+@inject EncounterService EncounterService
+@inject CharacterTemplateService CharacterTemplateService
+
+<div class="panel card">
+    <div class="panel-header">
+        <h2><i class="bi bi-list-ol"></i> Initiative</h2>
+        <div class="initiative-controls">
+            <span class="round-badge">Round @State.Current.Round</span>
+            <button class="icon-btn" title="Previous turn" @onclick="PreviousTurn"><i class="bi bi-skip-start-fill"></i></button>
+            <button class="icon-btn" title="Next turn" @onclick="NextTurn"><i class="bi bi-skip-end-fill"></i></button>
+            <button class="icon-btn" title="Auto-sort by initiative" @onclick="AutoSort"><i class="bi bi-sort-numeric-down"></i></button>
+            <button class="icon-btn @(State.SelectModeOn ? "active" : "")" title="Toggle multi-select" @onclick="() => State.ToggleSelectMode()">
+                <i class="bi bi-check2-square"></i>
+            </button>
+        </div>
+    </div>
+
+    @if (State.Current.Combatants.Count > 0)
+    {
+        <div class="combatant-list-header">
+            <span></span>
+            @if (State.SelectModeOn)
+            {
+                <input type="checkbox" class="bulk-select-checkbox" title="Select all"
+                       checked="@AllSelected" @onchange="ToggleSelectAll" />
+            }
+            else
+            {
+                <span></span>
+            }
+            <span></span>
+            <span class="col-label">Init</span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span class="col-label">HP</span>
+        </div>
+    }
+
+    <ul class="combatant-list">
+        @for (var i = 0; i < State.Current.Combatants.Count; i++)
+        {
+            var index = i;
+            var combatant = State.Current.Combatants[index];
+            var isActive = combatant.Id == State.Current.ActiveCombatantId;
+            <li class="combatant-card @(isActive ? "active" : "") @(combatant.Id == State.SelectedCombatantId ? "selected" : "") @(combatant.IsDefeated ? "defeated" : "")"
+                draggable="true"
+                @ondragstart="() => _draggedIndex = index"
+                @ondragover:preventDefault
+                @ondrop="() => Drop(index)"
+                @onclick="() => State.SelectCombatant(combatant.Id)">
+                <span class="drag-handle" title="Drag to reorder"><i class="bi bi-grip-vertical"></i></span>
+                @if (State.SelectModeOn)
+                {
+                    <input type="checkbox" class="bulk-select-checkbox" title="Select for bulk action"
+                           checked="@State.IsBulkSelected(combatant.Id)"
+                           @onclick="() => State.ToggleBulkSelection(combatant.Id)" @onclick:stopPropagation />
+                }
+                else
+                {
+                    <span></span>
+                }
+                @if (isActive)
+                {
+                    <span class="turn-badge is-active">▶</span>
+                }
+                else
+                {
+                    <span></span>
+                }
+                <span class="combatant-init" title="Initiative">
+                    <span class="value">@(combatant.Initiative?.ToString() ?? "—")</span>
+                </span>
+                <span class="avatar avatar-sm" style="@(HasPortrait(combatant) ? "" : $"background:{AvatarHelper.ColorFor(combatant.Id)}")">
+                    @if (HasPortrait(combatant))
+                    {
+                        <img src="data:image/png;base64,@combatant.PortraitBase64" alt="" />
+                    }
+                    else
+                    {
+                        @AvatarHelper.InitialsFor(combatant.Name)
+                    }
+                </span>
+                <span class="combatant-main">
+                    <span class="combatant-name" title="@combatant.Name">@combatant.Name</span>
+                    @if (combatant.Category is { } category)
+                    {
+                        <span class="category-pill category-@category.ToString().ToLowerInvariant()">@category</span>
+                    }
+                    @if (combatant.Conditions.Count > 0)
+                    {
+                        <span class="combatant-conditions">
+                            @foreach (var condition in combatant.Conditions.Take(4))
+                            {
+                                <i class="bi @(ConditionPresets.GetIcon(condition.Name))" title="@condition.Name"></i>
+                            }
+                            @if (combatant.Conditions.Count > 4)
+                            {
+                                <span class="condition-overflow">+@(combatant.Conditions.Count - 4)</span>
+                            }
+                        </span>
+                    }
+                </span>
+                @if (combatant.ArmorClass.HasValue)
+                {
+                    <span class="combatant-ac" title="Armor Class">
+                        <i class="bi bi-shield-fill"></i>@combatant.ArmorClass
+                    </span>
+                }
+                else
+                {
+                    <span></span>
+                }
+                <span class="combatant-hp" title="@($"{combatant.CurrentHp} / {combatant.MaxHp} HP")">
+                    <span class="hp-bar">
+                        <span class="hp-bar-fill @HpFillClass(combatant)" style="width:@(HpPercent(combatant))%"></span>
+                    </span>
+                </span>
+            </li>
+        }
+    </ul>
+
+    @if (_showAddForm)
+    {
+        <div class="add-combatant-form">
+            <div class="add-combatant-row">
+                <input @bind="_newName" placeholder="Name" maxlength="@Combatant.MaxNameLength" />
+                <input type="number" @bind="_newMaxHp" min="0" placeholder="Max HP" />
+            </div>
+            <div class="add-combatant-row">
+                <button class="btn btn-primary" @onclick="AddCombatant"><i class="bi bi-check-lg"></i> Add</button>
+                <button class="btn" @onclick="() => _showAddForm = false">Cancel</button>
+                <label class="btn file-button">
+                    <i class="bi bi-upload"></i> From file
+                    <InputFile OnChange="LoadTemplate" accept=".json" />
+                </label>
+            </div>
+        </div>
+    }
+    else
+    {
+        <button class="btn btn-block" @onclick="() => _showAddForm = true">
+            <i class="bi bi-plus-lg"></i> Add Combatant
+        </button>
+    }
+
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <div class="error-banner">@_error</div>
+    }
+</div>
+
+@code {
+    private int? _draggedIndex;
+    private bool _showAddForm;
+    private string _newName = "";
+    private int _newMaxHp = 10;
+    private string? _error;
+
+    private bool AllSelected =>
+        State.Current.Combatants.Count > 0 && State.Current.Combatants.All(c => State.IsBulkSelected(c.Id));
+
+    private static bool HasPortrait(Combatant c) => !string.IsNullOrEmpty(c.PortraitBase64);
+
+    private static int HpPercent(Combatant c) => c.MaxHp == 0 ? 0 : (int)Math.Round(100.0 * c.CurrentHp / c.MaxHp);
+
+    private static string HpFillClass(Combatant c)
+    {
+        var percent = HpPercent(c);
+        return percent switch
+        {
+            <= 25 => "danger",
+            <= 50 => "warning",
+            _ => ""
+        };
+    }
+
+    private void ToggleSelectAll()
+    {
+        if (AllSelected)
+        {
+            State.ClearBulkSelection();
+        }
+        else
+        {
+            State.SelectAllForBulk(State.Current.Combatants.Select(c => c.Id));
+        }
+    }
+
+    private void NextTurn()
+    {
+        EncounterService.NextTurn(State.Current);
+        State.NotifyChanged();
+    }
+
+    private void PreviousTurn()
+    {
+        EncounterService.PreviousTurn(State.Current);
+        State.NotifyChanged();
+    }
+
+    private void AutoSort()
+    {
+        EncounterService.AutoSort(State.Current);
+        State.NotifyChanged();
+    }
+
+    private void Drop(int targetIndex)
+    {
+        if (_draggedIndex is { } from && from != targetIndex)
+        {
+            EncounterService.Reorder(State.Current, from, targetIndex);
+        }
+        _draggedIndex = null;
+        State.NotifyChanged();
+    }
+
+    private void AddCombatant()
+    {
+        if (string.IsNullOrWhiteSpace(_newName))
+        {
+            return;
+        }
+
+        var combatant = new Combatant(_newName, Math.Max(0, _newMaxHp));
+        EncounterService.AddCombatant(State.Current, combatant);
+        _newName = "";
+        _newMaxHp = 10;
+        _showAddForm = false;
+        State.SelectCombatant(combatant.Id);
+    }
+
+    private async Task LoadTemplate(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            await using var stream = e.File.OpenReadStream(maxAllowedSize: 5_000_000);
+            var combatant = await CharacterTemplateService.LoadFromTemplateAsync(stream);
+            EncounterService.AddCombatant(State.Current, combatant);
+            _showAddForm = false;
+            State.SelectCombatant(combatant.Id);
+            _error = null;
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to load character: {ex.Message}";
+            State.NotifyChanged();
+        }
+    }
+}
