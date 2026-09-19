@@ -64,8 +64,20 @@ the `wasm-tools` workload (`dotnet workload install wasm-tools`) first - without
 works but skips IL trimming/AOT optimization.
 
 WebAssembly is the app's only hosting model: no persistent server process, no per-connection
-server memory - deploy is just static files - and it's capable of running offline once loaded,
-which matters for a GM app used at a table with unreliable wifi.
+server memory - deploy is just static files. Note that the app is not yet usable offline: there
+is no service worker (PWA), and fonts/icons load from a CDN, so a reload without a connection
+will not start it. Adding a service worker is the missing piece for true offline use.
+
+### Deploying to GitHub Pages
+
+`.github/workflows/deploy-pages.yml` builds, tests and publishes the app on every push to `main`
+(and on manual dispatch). One-time setup: in the repository settings, go to *Pages* and set the
+source to **GitHub Actions**. Free GitHub Pages requires a public repository.
+
+The site is served from `https://<user>.github.io/<repo>/`, so the workflow rewrites the published
+`index.html`'s `<base href>` to `/<repo>/` (local `dotnet run` keeps `/`). It also adds
+`.nojekyll` (Jekyll would otherwise ignore `_framework/`) and a `404.html` copy of `index.html`
+so deep links still boot the app.
 
 ## Tests
 

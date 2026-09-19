@@ -1,0 +1,65 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Test
+        run: dotnet test Turnwise.slnx -c Release
+
+      - name: Publish
+        run: dotnet publish src/Turnwise.Web.Client/Turnwise.Web.Client.csproj -c Release -o release
+
+      # A project site is served from /<repo-name>/, not from the domain root, so the
+      # published index.html needs a matching <base href>. Local dev keeps "/".
+      - name: Set base href
+        run: sed -i 's|<base href="/" />|<base href="/${{ github.event.repository.name }}/" />|' release/wwwroot/index.html
+
+      # Jekyll would otherwise ignore _framework/ (leading underscore) and break the app.
+      - name: Disable Jekyll
+        run: touch release/wwwroot/.nojekyll
+
+      # Serves the app for unknown paths (deep links) - Blazor's router takes over client-side.
+      - name: SPA fallback
+        run: cp release/wwwroot/index.html release/wwwroot/404.html
+
+      # GitHub Pages serves files by exact name and does not use the pre-compressed variants,
+      # so they would only add upload size (and index.html.* is stale after the base href edit).
+      - name: Remove pre-compressed files
+        run: find release/wwwroot -name '*.br' -delete -o -name '*.gz' -delete
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: release/wwwroot
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
