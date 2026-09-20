@@ -45,13 +45,11 @@ public sealed class Combatant
     }
 
     public int MaxHp { get; private set; }
-    public bool MaxHpLocked { get; set; }
     public int CurrentHp { get; private set; }
     public int? ArmorClass { get; private set; }
 
     public string? InitiativeFormula { get; set; }
     public int? Initiative { get; private set; }
-    public bool InitiativeLocked { get; set; }
 
     public IReadOnlyList<NamedRoll> NamedRolls => _namedRolls;
     public IReadOnlyList<Counter> Counters => _counters;
@@ -75,8 +73,6 @@ public sealed class Combatant
         Name = name;
         MaxHp = maxHp;
         CurrentHp = maxHp;
-        MaxHpLocked = true;
-        InitiativeLocked = true;
     }
 
     private static string Truncate(string? value)
@@ -97,21 +93,17 @@ public sealed class Combatant
         string name,
         int maxHp,
         int currentHp,
-        bool maxHpLocked,
         string? portraitBase64,
         string? initiativeFormula,
         int? initiative,
-        bool initiativeLocked = false,
         int? armorClass = null,
         CombatantCategory? category = null,
         string notes = "")
     {
         var combatant = new Combatant(name, maxHp, id)
         {
-            MaxHpLocked = maxHpLocked,
             PortraitBase64 = portraitBase64,
             InitiativeFormula = initiativeFormula,
-            InitiativeLocked = initiativeLocked,
             CurrentHp = Math.Clamp(currentHp, 0, maxHp),
             Category = category,
             Notes = notes
@@ -128,11 +120,11 @@ public sealed class Combatant
     /// </summary>
     public Combatant Duplicate()
     {
-        var clone = Restore(Guid.NewGuid(), Name, MaxHp, CurrentHp, MaxHpLocked, PortraitBase64, InitiativeFormula, null, InitiativeLocked, ArmorClass, Category, Notes);
+        var clone = Restore(Guid.NewGuid(), Name, MaxHp, CurrentHp, PortraitBase64, InitiativeFormula, null, ArmorClass, Category, Notes);
 
         foreach (var roll in _namedRolls)
         {
-            clone.AddNamedRoll(roll.Name, roll.Formula);
+            clone.AddNamedRoll(roll.Name, roll.Formula, category: roll.Category);
         }
 
         foreach (var counter in _counters)
@@ -156,11 +148,11 @@ public sealed class Combatant
     /// </summary>
     public Combatant Clone()
     {
-        var clone = Restore(Id, Name, MaxHp, CurrentHp, MaxHpLocked, PortraitBase64, InitiativeFormula, Initiative, InitiativeLocked, ArmorClass, Category, Notes);
+        var clone = Restore(Id, Name, MaxHp, CurrentHp, PortraitBase64, InitiativeFormula, Initiative, ArmorClass, Category, Notes);
 
         foreach (var roll in _namedRolls)
         {
-            clone.AddNamedRoll(roll.Name, roll.Formula, roll.Id);
+            clone.AddNamedRoll(roll.Name, roll.Formula, roll.Id, roll.Category);
         }
 
         foreach (var counter in _counters)
@@ -215,9 +207,9 @@ public sealed class Combatant
     /// <summary>Clears initiative. Used when importing a saved character template into a new encounter.</summary>
     public void ClearInitiative() => Initiative = null;
 
-    public NamedRoll AddNamedRoll(string name, DiceFormula formula, Guid? id = null)
+    public NamedRoll AddNamedRoll(string name, DiceFormula formula, Guid? id = null, NamedRollCategory? category = null)
     {
-        var roll = new NamedRoll(name, formula, id);
+        var roll = new NamedRoll(name, formula, id, category);
         _namedRolls.Add(roll);
         return roll;
     }
@@ -237,7 +229,7 @@ public sealed class Combatant
         }
 
         var original = _namedRolls[index];
-        var clone = new NamedRoll(original.Name, original.Formula);
+        var clone = new NamedRoll(original.Name, original.Formula, category: original.Category);
         _namedRolls.Insert(index + 1, clone);
         return clone;
     }

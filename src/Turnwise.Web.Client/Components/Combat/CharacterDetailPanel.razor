@@ -66,69 +66,82 @@
         </div>
 
         <div class="stats-section">
-            <div class="stats-row">
-                <div class="stats-row-main">
-                    <div class="stats-label">
-                        <span class="stat-icon icon-danger"><i class="bi bi-heart-fill"></i></span>
-                        <span>HP</span>
-                    </div>
-                    <div class="stats-value">
-                        <span class="stat-big">@combatant.CurrentHp</span>
-                        <span class="stat-big-sep">/</span>
-                        <input type="number" class="stat-big-input" value="@combatant.MaxHp" disabled="@combatant.MaxHpLocked"
-                               title="Max HP" @onchange="e => SetMaxHp(combatant, e)" />
-                        <button class="icon-btn @(combatant.MaxHpLocked ? "active" : "")"
-                                title="@(combatant.MaxHpLocked ? "Unlock max HP" : "Lock max HP")"
-                                @onclick="() => ToggleLock(combatant)">
-                            <i class="bi @(combatant.MaxHpLocked ? "bi-lock-fill" : "bi-unlock")"></i>
-                        </button>
-                    </div>
+            @if (!_statsEditMode)
+            {
+                <div class="stats-compact">
+                    <span class="stats-chip" title="HP"><i class="bi bi-heart-fill"></i> @combatant.CurrentHp/@combatant.MaxHp</span>
+                    <span class="stats-chip" title="Initiative"><i class="bi bi-dice-5-fill"></i> @(combatant.Initiative?.ToString() ?? "—")</span>
+                    <span class="stats-chip" title="Defence"><i class="bi bi-shield-fill"></i> @(combatant.ArmorClass?.ToString() ?? "—")</span>
                     <div class="stats-control">
                         <input @bind="_hpDelta" @bind:event="oninput" placeholder="e.g. -14 or +7"
                                title="Negative = damage, positive = healing" @onkeydown="e => HandleHpDeltaKeyDown(e, combatant)" />
                         <button class="btn btn-primary btn-sm" @onclick="() => ApplyHpDelta(combatant)">Apply</button>
                     </div>
+                    <button class="icon-btn" title="Edit HP/Initiative/Defence" @onclick="() => _statsEditMode = true">
+                        <i class="bi bi-pencil"></i>
+                    </button>
                 </div>
-            </div>
-
-            <div class="stats-divider"></div>
-
-            <div class="stats-row">
-                <div class="stats-row-main">
-                    <div class="stats-label">
-                        <span class="stat-icon icon-accent"><i class="bi bi-dice-5-fill"></i></span>
-                        <span>Initiative</span>
-                    </div>
-                    <div class="stats-value">
-                        <input type="number" class="stat-big-input" value="@combatant.Initiative" disabled="@combatant.InitiativeLocked"
-                               title="Current initiative" placeholder="—" @onchange="e => SetInitiative(combatant, e)" />
-                        <button class="icon-btn @(combatant.InitiativeLocked ? "active" : "")"
-                                title="@(combatant.InitiativeLocked ? "Unlock initiative" : "Lock initiative")"
-                                @onclick="() => ToggleInitiativeLock(combatant)">
-                            <i class="bi @(combatant.InitiativeLocked ? "bi-lock-fill" : "bi-unlock")"></i>
-                        </button>
-                    </div>
-                    <div class="stats-control">
-                        <input @bind="combatant.InitiativeFormula" placeholder="e.g. 1d20+2" maxlength="@DiceFormula.MaxNotationLength" />
-                        <button class="btn btn-sm" @onclick="() => RollInitiative(combatant)"><i class="bi bi-dice-6-fill"></i> Roll</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="stats-divider"></div>
-
-            <div class="stats-row">
-                <div class="stats-row-main">
-                    <div class="stats-label">
-                        <span class="stat-icon icon-accent"><i class="bi bi-shield-fill"></i></span>
-                        <span>Defence</span>
-                    </div>
-                    <div class="stats-value">
-                        <input type="number" class="stat-big-input narrow" value="@combatant.ArmorClass" min="0" placeholder="—"
-                               title="Defence (leave blank to hide)" @onchange="e => SetArmorClass(combatant, e)" />
+            }
+            else
+            {
+                <div class="stats-row">
+                    <div class="stats-row-main">
+                        <div class="stats-label">
+                            <span class="stat-icon icon-danger"><i class="bi bi-heart-fill"></i></span>
+                            <span>HP</span>
+                        </div>
+                        <div class="stats-value">
+                            <span class="stat-big">@combatant.CurrentHp</span>
+                            <span class="stat-big-sep">/</span>
+                            <input type="number" class="stat-big-input" value="@combatant.MaxHp"
+                                   title="Max HP" @onchange="e => SetMaxHp(combatant, e)" />
+                        </div>
+                        <div class="stats-control">
+                            <input @bind="_hpDelta" @bind:event="oninput" placeholder="e.g. -14 or +7"
+                                   title="Negative = damage, positive = healing" @onkeydown="e => HandleHpDeltaKeyDown(e, combatant)" />
+                            <button class="btn btn-primary btn-sm" @onclick="() => ApplyHpDelta(combatant)">Apply</button>
+                        </div>
                     </div>
                 </div>
-            </div>
+
+                <div class="stats-divider"></div>
+
+                <div class="stats-row">
+                    <div class="stats-row-main">
+                        <div class="stats-label">
+                            <span class="stat-icon icon-accent"><i class="bi bi-dice-5-fill"></i></span>
+                            <span>Initiative</span>
+                        </div>
+                        <div class="stats-value">
+                            <input type="number" class="stat-big-input" value="@combatant.Initiative"
+                                   title="Current initiative" placeholder="—" @onchange="e => SetInitiative(combatant, e)" />
+                        </div>
+                        <div class="stats-control">
+                            <input @bind="combatant.InitiativeFormula" placeholder="e.g. 1d20+2" maxlength="@DiceFormula.MaxNotationLength" />
+                            <button class="btn btn-sm" @onclick="() => RollInitiative(combatant)"><i class="bi bi-dice-6-fill"></i> Roll</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-divider"></div>
+
+                <div class="stats-row">
+                    <div class="stats-row-main">
+                        <div class="stats-label">
+                            <span class="stat-icon icon-accent"><i class="bi bi-shield-fill"></i></span>
+                            <span>Defence</span>
+                        </div>
+                        <div class="stats-value">
+                            <input type="number" class="stat-big-input narrow" value="@combatant.ArmorClass" min="0" placeholder="—"
+                                   title="Defence (leave blank to hide)" @onchange="e => SetArmorClass(combatant, e)" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-row stats-row-done">
+                    <button class="btn btn-sm btn-primary" @onclick="() => _statsEditMode = false"><i class="bi bi-check-lg"></i> Done</button>
+                </div>
+            }
         </div>
 
         <div class="section">
@@ -180,11 +193,18 @@
                                 @ondragover:preventDefault
                                 @ondrop="() => DropRoll(combatant, index)">
                                 <span class="drag-handle" title="Drag to reorder"><i class="bi bi-grip-vertical"></i></span>
-                                <span class="stat-icon icon-accent"><i class="bi bi-dice-6-fill"></i></span>
+                                <span class="stat-icon icon-accent"><i class="bi @(NamedRollCategories.GetIcon(roll.Category))"></i></span>
                                 @if (_editingRollId == roll.Id)
                                 {
                                     <input class="inline-edit-input" @bind="_editRollName" placeholder="Name" maxlength="@NamedRoll.MaxNameLength" />
                                     <input class="inline-edit-input" @bind="_editRollFormula" placeholder="1d20+4" maxlength="@DiceFormula.MaxNotationLength" />
+                                    <select class="inline-edit-input narrow" @bind="_editRollCategory">
+                                        <option value="">No category</option>
+                                        @foreach (var category in Enum.GetValues<NamedRollCategory>())
+                                        {
+                                            <option value="@category">@category</option>
+                                        }
+                                    </select>
                                     <button class="btn btn-sm btn-primary" @onclick="() => SaveRollEdit(roll)">Save</button>
                                     <button class="btn btn-sm" @onclick="() => _editingRollId = null">Cancel</button>
                                 }
@@ -217,6 +237,13 @@
                         <div class="add-inline-form">
                             <input @bind="_newRollName" placeholder="Name" maxlength="@NamedRoll.MaxNameLength" />
                             <input @bind="_newRollFormula" placeholder="1d20+4" maxlength="@DiceFormula.MaxNotationLength" />
+                            <select @bind="_newRollCategory">
+                                <option value="">No category</option>
+                                @foreach (var category in Enum.GetValues<NamedRollCategory>())
+                                {
+                                    <option value="@category">@category</option>
+                                }
+                            </select>
                             <button class="btn btn-primary" @onclick="() => AddRoll(combatant)">Add</button>
                         </div>
                     }
@@ -354,12 +381,14 @@
 </div>
 
 @code {
+    private bool _statsEditMode;
     private string _hpDelta = "";
     private bool _showAddRoll;
     private bool _showAddCounter;
     private bool _showAddCondition;
     private string _newRollName = "";
     private string _newRollFormula = "";
+    private string _newRollCategory = "";
     private string _newCounterName = "";
     private int _newCounterMax = 3;
     private int? _draggedRollIndex;
@@ -367,6 +396,7 @@
     private Guid? _editingRollId;
     private string _editRollName = "";
     private string _editRollFormula = "";
+    private string _editRollCategory = "";
     private Guid? _editingCounterId;
     private string _editCounterName = "";
     private int _editCounterMax;
@@ -475,12 +505,6 @@
         State.NotifyChanged();
     }
 
-    private void ToggleLock(Combatant combatant)
-    {
-        combatant.MaxHpLocked = !combatant.MaxHpLocked;
-        State.NotifyChanged();
-    }
-
     private void SetMaxHp(Combatant combatant, ChangeEventArgs e)
     {
         if (int.TryParse(e.Value?.ToString(), out var value) && value >= 0)
@@ -508,12 +532,6 @@
     {
         var text = e.Value?.ToString();
         combatant.SetInitiative(int.TryParse(text, out var value) ? value : null);
-        State.NotifyChanged();
-    }
-
-    private void ToggleInitiativeLock(Combatant combatant)
-    {
-        combatant.InitiativeLocked = !combatant.InitiativeLocked;
         State.NotifyChanged();
     }
 
@@ -583,9 +601,11 @@
             return;
         }
 
-        combatant.AddNamedRoll(_newRollName, formula!);
+        var category = Enum.TryParse<NamedRollCategory>(_newRollCategory, out var parsedCategory) ? parsedCategory : (NamedRollCategory?)null;
+        combatant.AddNamedRoll(_newRollName, formula!, category: category);
         _newRollName = "";
         _newRollFormula = "";
+        _newRollCategory = "";
         _showAddRoll = false;
         _error = null;
         State.NotifyChanged();
@@ -606,6 +626,7 @@
         _editingRollId = roll.Id;
         _editRollName = roll.Name;
         _editRollFormula = roll.Formula.ToString();
+        _editRollCategory = roll.Category?.ToString() ?? "";
         _openMenuTriggerId = null;
     }
 
@@ -625,6 +646,7 @@
 
         roll.Name = _editRollName.Trim();
         roll.Formula = formula!;
+        roll.Category = Enum.TryParse<NamedRollCategory>(_editRollCategory, out var parsedCategory) ? parsedCategory : (NamedRollCategory?)null;
         _editingRollId = null;
         _error = null;
         State.NotifyChanged();

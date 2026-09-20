@@ -30,9 +30,9 @@
                 <span></span>
             }
             <span></span>
+            <span></span>
+            <span></span>
             <span class="col-label">Init</span>
-            <span></span>
-            <span></span>
             <span></span>
             <span class="col-label">HP</span>
         </div>
@@ -45,78 +45,81 @@
             var combatant = State.Current.Combatants[index];
             var isActive = combatant.Id == State.Current.ActiveCombatantId;
             <li class="combatant-card @(isActive ? "active" : "") @(combatant.Id == State.SelectedCombatantId ? "selected" : "") @(combatant.IsDefeated ? "defeated" : "")"
-                draggable="true"
-                @ondragstart="() => _draggedIndex = index"
-                @ondragover:preventDefault
-                @ondrop="() => Drop(index)"
                 @onclick="() => State.SelectCombatant(combatant.Id)">
-                <span class="drag-handle" title="Drag to reorder"><i class="bi bi-grip-vertical"></i></span>
-                @if (State.SelectModeOn)
-                {
-                    <input type="checkbox" class="bulk-select-checkbox" title="Select for bulk action"
-                           checked="@State.IsBulkSelected(combatant.Id)"
-                           @onclick="() => State.ToggleBulkSelection(combatant.Id)" @onclick:stopPropagation />
-                }
-                else
-                {
-                    <span></span>
-                }
-                @if (isActive)
-                {
-                    <span class="turn-badge is-active">▶</span>
-                }
-                else
-                {
-                    <span></span>
-                }
-                <span class="combatant-init" title="Initiative">
-                    <span class="value">@(combatant.Initiative?.ToString() ?? "—")</span>
-                </span>
-                <span class="avatar avatar-sm" style="@(HasPortrait(combatant) ? "" : $"background:{AvatarHelper.ColorFor(combatant.Id)}")">
-                    @if (HasPortrait(combatant))
+                <div class="combatant-row-top">
+                    <span class="reorder-buttons">
+                        <button title="Move up" disabled="@(index == 0)" @onclick="() => MoveUp(index)" @onclick:stopPropagation><i class="bi bi-chevron-up"></i></button>
+                        <button title="Move down" disabled="@(index == State.Current.Combatants.Count - 1)" @onclick="() => MoveDown(index)" @onclick:stopPropagation><i class="bi bi-chevron-down"></i></button>
+                    </span>
+                    @if (State.SelectModeOn)
                     {
-                        <img src="data:image/png;base64,@combatant.PortraitBase64" alt="" />
+                        <input type="checkbox" class="bulk-select-checkbox" title="Select for bulk action"
+                               checked="@State.IsBulkSelected(combatant.Id)"
+                               @onclick="() => State.ToggleBulkSelection(combatant.Id)" @onclick:stopPropagation />
                     }
                     else
                     {
-                        @AvatarHelper.InitialsFor(combatant.Name)
+                        <span></span>
                     }
-                </span>
-                <span class="combatant-main">
-                    <span class="combatant-name" title="@combatant.Name">@combatant.Name</span>
-                    @if (combatant.Category is { } category)
+                    @if (isActive)
                     {
-                        <span class="category-pill category-@category.ToString().ToLowerInvariant()">@category</span>
+                        <span class="turn-badge is-active">▶</span>
                     }
-                    @if (combatant.Conditions.Count > 0)
+                    else
                     {
-                        <span class="combatant-conditions">
-                            @foreach (var condition in combatant.Conditions.Take(4))
-                            {
-                                <i class="bi @(ConditionPresets.GetIcon(condition.Name))" title="@condition.Name"></i>
-                            }
-                            @if (combatant.Conditions.Count > 4)
-                            {
-                                <span class="condition-overflow">+@(combatant.Conditions.Count - 4)</span>
-                            }
+                        <span></span>
+                    }
+                    <span class="avatar avatar-sm" style="@(HasPortrait(combatant) ? "" : $"background:{AvatarHelper.ColorFor(combatant.Id)}")">
+                        @if (HasPortrait(combatant))
+                        {
+                            <img src="data:image/png;base64,@combatant.PortraitBase64" alt="" />
+                        }
+                        else
+                        {
+                            @AvatarHelper.InitialsFor(combatant.Name)
+                        }
+                    </span>
+                    <span class="combatant-main">
+                        <span class="combatant-name" title="@combatant.Name">@combatant.Name</span>
+                        @if (combatant.Category is { } category)
+                        {
+                            <span class="category-pill category-@category.ToString().ToLowerInvariant()">@category</span>
+                        }
+                        @if (combatant.Conditions.Count > 0)
+                        {
+                            <span class="combatant-conditions">
+                                @foreach (var condition in combatant.Conditions.Take(4))
+                                {
+                                    <i class="bi @(ConditionPresets.GetIcon(condition.Name))" title="@condition.Name"></i>
+                                }
+                                @if (combatant.Conditions.Count > 4)
+                                {
+                                    <span class="condition-overflow">+@(combatant.Conditions.Count - 4)</span>
+                                }
+                            </span>
+                        }
+                    </span>
+                </div>
+                <div class="combatant-row-bottom">
+                    <span class="combatant-init" title="Initiative">
+                        <span class="value">@(combatant.Initiative?.ToString() ?? "—")</span>
+                    </span>
+                    @if (combatant.ArmorClass.HasValue)
+                    {
+                        <span class="combatant-ac" title="Armor Class">
+                            <i class="bi bi-shield-fill"></i>@combatant.ArmorClass
                         </span>
                     }
-                </span>
-                @if (combatant.ArmorClass.HasValue)
-                {
-                    <span class="combatant-ac" title="Armor Class">
-                        <i class="bi bi-shield-fill"></i>@combatant.ArmorClass
+                    else
+                    {
+                        <span></span>
+                    }
+                    <span class="combatant-hp" title="@($"{combatant.CurrentHp} / {combatant.MaxHp} HP")">
+                        <span class="hp-bar">
+                            <span class="hp-bar-fill @HpFillClass(combatant)" style="width:@(HpPercent(combatant))%"></span>
+                        </span>
                     </span>
-                }
-                else
-                {
-                    <span></span>
-                }
-                <span class="combatant-hp" title="@($"{combatant.CurrentHp} / {combatant.MaxHp} HP")">
-                    <span class="hp-bar">
-                        <span class="hp-bar-fill @HpFillClass(combatant)" style="width:@(HpPercent(combatant))%"></span>
-                    </span>
-                </span>
+                </div>
             </li>
         }
     </ul>
@@ -152,7 +155,6 @@
 </div>
 
 @code {
-    private int? _draggedIndex;
     private bool _showAddForm;
     private string _newName = "";
     private int _newMaxHp = 10;
@@ -206,14 +208,22 @@
         State.NotifyChanged();
     }
 
-    private void Drop(int targetIndex)
+    private void MoveUp(int index)
     {
-        if (_draggedIndex is { } from && from != targetIndex)
+        if (index > 0)
         {
-            EncounterService.Reorder(State.Current, from, targetIndex);
+            EncounterService.Reorder(State.Current, index, index - 1);
+            State.NotifyChanged();
         }
-        _draggedIndex = null;
-        State.NotifyChanged();
+    }
+
+    private void MoveDown(int index)
+    {
+        if (index < State.Current.Combatants.Count - 1)
+        {
+            EncounterService.Reorder(State.Current, index, index + 1);
+            State.NotifyChanged();
+        }
     }
 
     private void AddCombatant()

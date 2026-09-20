@@ -23,7 +23,7 @@
         {
             <li @key="entry.Id">
                 <span class="log-time">@entry.Timestamp.ToLocalTime().ToString("HH:mm")</span>
-                <i class="bi @(IconFor(entry.Type)) log-type-icon" title="@FormatType(entry.Type)"></i>
+                <i class="bi @(IconFor(entry)) log-type-icon" title="@FormatType(entry.Type)"></i>
                 @entry.Message
                 @if (!string.IsNullOrEmpty(entry.Result))
                 {
@@ -55,6 +55,7 @@
         return entries.OrderByDescending(e => e.Timestamp);
     }
 
+    /// <summary>Icon for a filter chip, where there is no specific entry to read a roll category from.</summary>
     private static string IconFor(CombatLogEntryType? type) => type switch
     {
         CombatLogEntryType.HpChange => "bi-heart-fill",
@@ -64,6 +65,12 @@
         CombatLogEntryType.RoundChange => "bi-flag-fill",
         _ => "bi-list-ul"
     };
+
+    /// <summary>Icon for an actual log entry - a dice roll with a category uses that category's icon instead of the generic one.</summary>
+    private static string IconFor(CombatLogEntry entry) =>
+        entry.Type == CombatLogEntryType.DiceRoll && entry.RollCategory is { } category
+            ? NamedRollCategories.GetIcon(category)
+            : IconFor(entry.Type);
 
     private static string FormatType(CombatLogEntryType type) => type switch
     {

@@ -6,12 +6,17 @@ namespace Turnwise.Application.Common;
 /// </summary>
 public static class SchemaVersions
 {
-    /// <summary>Bumped for the addition of Combatant.Category/Notes - purely additive, so files at <see cref="MinSupportedCharacterSchemaVersion"/> still load fine (the new fields just come back empty).</summary>
-    public const int CurrentCharacterSchemaVersion = 4;
+    /// <summary>
+    /// Bumped for: dropping Combatant.MaxHpLocked/InitiativeLocked (the lock buttons were replaced
+    /// by an edit-mode toggle, a UI-only concept now) and adding NamedRoll.Category. Both are safe
+    /// for files at <see cref="MinSupportedCharacterSchemaVersion"/>: the dropped fields are simply
+    /// ignored on load, and the new field comes back empty.
+    /// </summary>
+    public const int CurrentCharacterSchemaVersion = 5;
     public const int MinSupportedCharacterSchemaVersion = 3;
 
-    /// <summary>Bumped alongside <see cref="CurrentCharacterSchemaVersion"/>, same reasoning (encounter files embed full combatant sheets).</summary>
-    public const int CurrentEncounterSchemaVersion = 6;
+    /// <summary>Bumped alongside <see cref="CurrentCharacterSchemaVersion"/>, same reasoning (encounter files embed full combatant sheets and their own log, which gained CombatLogEntry.RollCategory).</summary>
+    public const int CurrentEncounterSchemaVersion = 7;
     public const int MinSupportedEncounterSchemaVersion = 5;
 
     /// <summary>Portrait images embedded as base64 are capped to keep character files a reasonable size.</summary>

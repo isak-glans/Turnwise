@@ -242,4 +242,22 @@ public class EncounterServiceTests
         Assert.Equal(CombatLogEntryType.DiceRoll, entry.Type);
         Assert.Equal("8", entry.Result);
     }
+
+    [Fact]
+    public void RollNamedRoll_CapturesTheRollsCategoryOnTheLogEntry()
+    {
+        var service = MakeService(4, 4);
+        var encounter = new Encounter();
+        var combatant = new Combatant("Fighter", 20);
+        var roll = combatant.AddNamedRoll(
+            "Longsword hit",
+            Domain.ValueObjects.DiceFormula.Parse("1d20+4"),
+            category: Domain.Enums.NamedRollCategory.Weapon);
+        encounter.AddCombatant(combatant);
+
+        service.RollNamedRoll(encounter, combatant.Id, roll.Id);
+
+        var entry = Assert.Single(encounter.Log);
+        Assert.Equal(Domain.Enums.NamedRollCategory.Weapon, entry.RollCategory);
+    }
 }

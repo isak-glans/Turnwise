@@ -13,16 +13,14 @@ internal static class CombatantMapper
         Name = combatant.Name,
         PortraitBase64 = combatant.PortraitBase64,
         MaxHp = combatant.MaxHp,
-        MaxHpLocked = combatant.MaxHpLocked,
         CurrentHp = combatant.CurrentHp,
         ArmorClass = combatant.ArmorClass,
         InitiativeFormula = combatant.InitiativeFormula,
         Initiative = combatant.Initiative,
-        InitiativeLocked = combatant.InitiativeLocked,
         Category = combatant.Category?.ToString(),
         Notes = combatant.Notes,
         NamedRolls = combatant.NamedRolls
-            .Select(r => new NamedRollDto { Id = r.Id, Name = r.Name, Formula = r.Formula.ToString() })
+            .Select(r => new NamedRollDto { Id = r.Id, Name = r.Name, Formula = r.Formula.ToString(), Category = r.Category?.ToString() })
             .ToList(),
         Counters = combatant.Counters
             .Select(c => new CounterDto { Id = c.Id, Name = c.Name, Current = c.Current, Max = c.Max, ShowBar = c.ShowBar })
@@ -41,18 +39,17 @@ internal static class CombatantMapper
             dto.Name,
             dto.MaxHp,
             dto.CurrentHp,
-            dto.MaxHpLocked,
             dto.PortraitBase64,
             dto.InitiativeFormula,
             dto.Initiative,
-            dto.InitiativeLocked,
             dto.ArmorClass,
             category,
             dto.Notes);
 
         foreach (var roll in dto.NamedRolls)
         {
-            combatant.AddNamedRoll(roll.Name, DiceFormula.Parse(roll.Formula), roll.Id);
+            var rollCategory = Enum.TryParse<NamedRollCategory>(roll.Category, out var parsedRollCategory) ? parsedRollCategory : (NamedRollCategory?)null;
+            combatant.AddNamedRoll(roll.Name, DiceFormula.Parse(roll.Formula), roll.Id, rollCategory);
         }
 
         foreach (var counter in dto.Counters)

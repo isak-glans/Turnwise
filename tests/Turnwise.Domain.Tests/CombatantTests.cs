@@ -224,6 +224,19 @@ public class CombatantTests
     }
 
     [Fact]
+    public void Duplicate_And_Clone_CopyNamedRollCategory()
+    {
+        var original = new Combatant("Goblin", 10);
+        original.AddNamedRoll("Scimitar", Turnwise.Domain.ValueObjects.DiceFormula.Parse("1d6+2"), category: Turnwise.Domain.Enums.NamedRollCategory.Weapon);
+
+        var duplicate = original.Duplicate();
+        var clone = original.Clone();
+
+        Assert.Equal(Turnwise.Domain.Enums.NamedRollCategory.Weapon, duplicate.NamedRolls[0].Category);
+        Assert.Equal(Turnwise.Domain.Enums.NamedRollCategory.Weapon, clone.NamedRolls[0].Category);
+    }
+
+    [Fact]
     public void Clone_IsIndependentOfTheOriginal()
     {
         var original = new Combatant("Goblin", 10);

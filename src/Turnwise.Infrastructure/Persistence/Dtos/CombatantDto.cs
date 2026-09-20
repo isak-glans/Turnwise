@@ -5,6 +5,9 @@ public sealed class NamedRollDto
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Formula { get; set; } = string.Empty;
+
+    /// <summary>Weapon/Magic/Skill tag, stored by name like <see cref="CombatantDto.Category"/>. Absent on rolls saved before this field existed.</summary>
+    public string? Category { get; set; }
 }
 
 public sealed class CounterDto
@@ -35,12 +38,10 @@ public sealed class CombatantDto
     public string? PortraitImageId { get; set; }
 
     public int MaxHp { get; set; }
-    public bool MaxHpLocked { get; set; }
     public int CurrentHp { get; set; }
     public int? ArmorClass { get; set; }
     public string? InitiativeFormula { get; set; }
     public int? Initiative { get; set; }
-    public bool InitiativeLocked { get; set; }
 
     /// <summary>Enemy/Ally/RP tag, stored by name (like <see cref="CombatLogEntryDto.Type"/>) so it round-trips as a readable string. Absent on files saved before this field existed.</summary>
     public string? Category { get; set; }

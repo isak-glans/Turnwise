@@ -181,7 +181,8 @@ public sealed class EncounterService(DiceRollingService diceRoller)
             CombatLogEntryType.DiceRoll,
             $"{combatant.Name} rolls {namedRoll.Name} ({namedRoll.Formula}): {result.Breakdown}",
             combatant.Id,
-            result: result.Total.ToString()));
+            result: result.Total.ToString(),
+            rollCategory: namedRoll.Category));
 
         return result;
     }

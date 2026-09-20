@@ -18,7 +18,7 @@ public class JsonCharacterTemplateStoreTests
             Notes = "Hiding in the bushes."
         };
         goblin.SetArmorClass(15);
-        goblin.AddNamedRoll("Scimitar", Domain.ValueObjects.DiceFormula.Parse("1d6+2"));
+        goblin.AddNamedRoll("Scimitar", Domain.ValueObjects.DiceFormula.Parse("1d6+2"), category: NamedRollCategory.Weapon);
         goblin.AddCondition("Poisoned");
 
         await using var stream = new MemoryStream();
@@ -33,6 +33,7 @@ public class JsonCharacterTemplateStoreTests
         Assert.Equal("Hiding in the bushes.", loaded.Notes);
         Assert.Single(loaded.NamedRolls);
         Assert.Equal("Scimitar", loaded.NamedRolls[0].Name);
+        Assert.Equal(NamedRollCategory.Weapon, loaded.NamedRolls[0].Category);
         Assert.Single(loaded.Conditions);
         Assert.Equal("Poisoned", loaded.Conditions[0].Name);
     }

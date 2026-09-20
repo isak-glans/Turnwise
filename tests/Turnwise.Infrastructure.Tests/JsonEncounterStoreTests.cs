@@ -20,6 +20,12 @@ public class JsonEncounterStoreTests
         encounter.AddCombatant(fighter);
         encounter.NextTurn();
         encounter.AddLogEntry(new CombatLogEntry(CombatLogEntryType.InitiativeChange, "Fighter: initiative 18", fighter.Id));
+        encounter.AddLogEntry(new CombatLogEntry(
+            CombatLogEntryType.DiceRoll,
+            "Fighter rolls Longsword hit: 8",
+            fighter.Id,
+            result: "8",
+            rollCategory: NamedRollCategory.Weapon));
 
         await using var stream = new MemoryStream();
         await store.SaveAsync(encounter, stream);
@@ -35,7 +41,9 @@ public class JsonEncounterStoreTests
         Assert.Equal(fighter.Initiative, loadedFighter.Initiative);
         Assert.Equal(3, loadedFighter.Counters[0].Current);
         Assert.Single(loadedFighter.NamedRolls);
-        Assert.Single(loaded.Log);
+        Assert.Equal(2, loaded.Log.Count);
+        var rollEntry = Assert.Single(loaded.Log, e => e.Type == CombatLogEntryType.DiceRoll);
+        Assert.Equal(NamedRollCategory.Weapon, rollEntry.RollCategory);
     }
 
     [Fact]

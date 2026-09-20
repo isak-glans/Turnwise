@@ -1,4 +1,5 @@
 using Turnwise.Domain.Entities;
+using Turnwise.Domain.Enums;
 using Turnwise.Domain.ValueObjects;
 using Xunit;
 
@@ -6,6 +7,18 @@ namespace Turnwise.Domain.Tests;
 
 public class NamedRollTests
 {
+    [Fact]
+    public void Category_DefaultsToNullAndIsSettable()
+    {
+        var roll = new NamedRoll("Longsword", DiceFormula.Parse("1d8+3"));
+        Assert.Null(roll.Category);
+
+        roll.Category = NamedRollCategory.Weapon;
+
+        Assert.Equal(NamedRollCategory.Weapon, roll.Category);
+    }
+
+
     [Theory]
     [InlineData("")]
     [InlineData("   ")]

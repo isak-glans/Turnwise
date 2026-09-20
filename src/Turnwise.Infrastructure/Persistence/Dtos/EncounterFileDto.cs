@@ -8,6 +8,9 @@ public sealed class CombatLogEntryDto
     public Guid? CombatantId { get; set; }
     public string Message { get; set; } = string.Empty;
     public string? Result { get; set; }
+
+    /// <summary>The rolling NamedRoll's category at the time of the roll, stored by name. Only present for DiceRoll entries whose roll had a category set.</summary>
+    public string? RollCategory { get; set; }
 }
 
 /// <summary>Root object for a saved encounter (*.turnwise-encounter.json): round, turn order and every combatant's full sheet.</summary>

@@ -17,11 +17,16 @@
 
 <body>
     <div id="app">
-        <svg class="loading-progress">
-            <circle r="40%" cx="50%" cy="50%" />
-            <circle r="40%" cx="50%" cy="50%" />
-        </svg>
-        <div class="loading-progress-text"></div>
+        <div class="loading-shell">
+            <div class="loading-ring">
+                <svg class="loading-progress" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="42" />
+                    <circle cx="50" cy="50" r="42" />
+                </svg>
+                <span class="loading-icon">⚔️</span>
+            </div>
+            <div class="loading-progress-text"></div>
+        </div>
     </div>
 
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>

@@ -39,7 +39,8 @@ public sealed class JsonEncounterStore : IEncounterStore
                 throw new FormatException($"Unknown combat log entry type '{logDto.Type}'.");
             }
 
-            encounter.AddLogEntry(new CombatLogEntry(logType, logDto.Message, logDto.CombatantId, logDto.Timestamp, logDto.Id, logDto.Result));
+            var rollCategory = Enum.TryParse<NamedRollCategory>(logDto.RollCategory, out var parsedRollCategory) ? parsedRollCategory : (NamedRollCategory?)null;
+            encounter.AddLogEntry(new CombatLogEntry(logType, logDto.Message, logDto.CombatantId, logDto.Timestamp, logDto.Id, logDto.Result, rollCategory));
         }
 
         return encounter;
@@ -73,7 +74,8 @@ public sealed class JsonEncounterStore : IEncounterStore
                 Type = e.Type.ToString(),
                 CombatantId = e.CombatantId,
                 Message = e.Message,
-                Result = e.Result
+                Result = e.Result,
+                RollCategory = e.RollCategory?.ToString()
             }).ToList()
         };
 

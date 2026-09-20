@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Turnwise.Domain.Enums;
 using Turnwise.Domain.ValueObjects;
 
 namespace Turnwise.Domain.Entities;
@@ -22,7 +23,10 @@ public sealed class NamedRoll
 
     public DiceFormula Formula { get; set; }
 
-    public NamedRoll(string name, DiceFormula formula, Guid? id = null)
+    /// <summary>Optional Weapon/Magic/Skill tag, used to pick an icon for this roll's row and its combat log entries.</summary>
+    public NamedRollCategory? Category { get; set; }
+
+    public NamedRoll(string name, DiceFormula formula, Guid? id = null, NamedRollCategory? category = null)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -32,6 +36,7 @@ public sealed class NamedRoll
         Id = id ?? Guid.NewGuid();
         Name = name;
         Formula = formula;
+        Category = category;
     }
 
     private static string Truncate(string? value)

@@ -18,7 +18,10 @@ public sealed class CombatLogEntry
     /// <summary>The key number this entry is about (a rolled total, or an applied HP delta) - shown emphasized in the UI, separate from the descriptive <see cref="Message"/>.</summary>
     public string? Result { get; }
 
-    public CombatLogEntry(CombatLogEntryType type, string message, Guid? combatantId, DateTimeOffset? timestamp = null, Guid? id = null, string? result = null)
+    /// <summary>The rolling NamedRoll's category at the time of the roll (only meaningful for <see cref="CombatLogEntryType.DiceRoll"/> entries), captured here rather than looked up later so the icon stays correct even if the roll is since edited or deleted.</summary>
+    public NamedRollCategory? RollCategory { get; }
+
+    public CombatLogEntry(CombatLogEntryType type, string message, Guid? combatantId, DateTimeOffset? timestamp = null, Guid? id = null, string? result = null, NamedRollCategory? rollCategory = null)
     {
         if (string.IsNullOrWhiteSpace(message))
         {
@@ -31,5 +34,6 @@ public sealed class CombatLogEntry
         Message = message;
         Timestamp = timestamp ?? DateTimeOffset.UtcNow;
         Result = result;
+        RollCategory = rollCategory;
     }
 }
