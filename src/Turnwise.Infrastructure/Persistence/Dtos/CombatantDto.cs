@@ -17,6 +17,9 @@ public sealed class CounterDto
     public int Current { get; set; }
     public int Max { get; set; }
     public bool ShowBar { get; set; } = true;
+
+    /// <summary>Ammunition/Potions/Abilities tag, stored by name like <see cref="NamedRollDto.Category"/>. Absent on counters saved before this field existed.</summary>
+    public string? Category { get; set; }
 }
 
 public sealed class ConditionDto
@@ -39,6 +42,10 @@ public sealed class CombatantDto
 
     public int MaxHp { get; set; }
     public int CurrentHp { get; set; }
+
+    /// <summary>Extra HP that absorbs damage before CurrentHp does. Absent (defaults to 0) on files saved before this field existed.</summary>
+    public int TemporaryHp { get; set; }
+
     public int? ArmorClass { get; set; }
     public string? InitiativeFormula { get; set; }
     public int? Initiative { get; set; }

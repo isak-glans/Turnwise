@@ -14,6 +14,7 @@ internal static class CombatantMapper
         PortraitBase64 = combatant.PortraitBase64,
         MaxHp = combatant.MaxHp,
         CurrentHp = combatant.CurrentHp,
+        TemporaryHp = combatant.TemporaryHp,
         ArmorClass = combatant.ArmorClass,
         InitiativeFormula = combatant.InitiativeFormula,
         Initiative = combatant.Initiative,
@@ -23,7 +24,7 @@ internal static class CombatantMapper
             .Select(r => new NamedRollDto { Id = r.Id, Name = r.Name, Formula = r.Formula.ToString(), Category = r.Category?.ToString() })
             .ToList(),
         Counters = combatant.Counters
-            .Select(c => new CounterDto { Id = c.Id, Name = c.Name, Current = c.Current, Max = c.Max, ShowBar = c.ShowBar })
+            .Select(c => new CounterDto { Id = c.Id, Name = c.Name, Current = c.Current, Max = c.Max, ShowBar = c.ShowBar, Category = c.Category?.ToString() })
             .ToList(),
         Conditions = combatant.Conditions
             .Select(c => new ConditionDto { Id = c.Id, Name = c.Name })
@@ -44,7 +45,8 @@ internal static class CombatantMapper
             dto.Initiative,
             dto.ArmorClass,
             category,
-            dto.Notes);
+            dto.Notes,
+            dto.TemporaryHp);
 
         foreach (var roll in dto.NamedRolls)
         {
@@ -54,7 +56,8 @@ internal static class CombatantMapper
 
         foreach (var counter in dto.Counters)
         {
-            combatant.AddCounter(counter.Name, counter.Current, counter.Max, counter.ShowBar, counter.Id);
+            var counterCategory = Enum.TryParse<CounterCategory>(counter.Category, out var parsedCounterCategory) ? parsedCounterCategory : (CounterCategory?)null;
+            combatant.AddCounter(counter.Name, counter.Current, counter.Max, counter.ShowBar, counter.Id, counterCategory);
         }
 
         foreach (var condition in dto.Conditions)

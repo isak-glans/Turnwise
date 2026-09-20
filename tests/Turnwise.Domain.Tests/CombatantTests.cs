@@ -334,4 +334,98 @@ public class CombatantTests
         Assert.Equal(3, clone.Current);
         Assert.Equal(4, clone.Max);
     }
+
+    [Fact]
+    public void DuplicateCounter_CopiesCategory()
+    {
+        var combatant = new Combatant("Fighter", 20);
+        combatant.AddCounter("Ammo", 10, 20, category: Turnwise.Domain.Enums.CounterCategory.Ammunition);
+
+        var clone = combatant.DuplicateCounter(combatant.Counters[0].Id);
+
+        Assert.Equal(Turnwise.Domain.Enums.CounterCategory.Ammunition, clone.Category);
+    }
+
+    [Fact]
+    public void SetTemporaryHp_RejectsNegativeValue()
+    {
+        var combatant = new Combatant("Goblin", 10);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => combatant.SetTemporaryHp(-1));
+    }
+
+    [Fact]
+    public void SetTemporaryHp_DefaultsToZeroAndIsSettable()
+    {
+        var combatant = new Combatant("Goblin", 10);
+        Assert.Equal(0, combatant.TemporaryHp);
+
+        combatant.SetTemporaryHp(5);
+
+        Assert.Equal(5, combatant.TemporaryHp);
+    }
+
+    [Fact]
+    public void ApplyHpDelta_DamageIsFullyAbsorbedByTemporaryHpWhenItCoversTheWholeDelta()
+    {
+        var combatant = new Combatant("Goblin", 10);
+        combatant.SetTemporaryHp(5);
+
+        var applied = combatant.ApplyHpDelta(-3);
+
+        Assert.Equal(2, combatant.TemporaryHp);
+        Assert.Equal(10, combatant.CurrentHp);
+        Assert.Equal(0, applied);
+    }
+
+    [Fact]
+    public void ApplyHpDelta_DamageExceedingTemporaryHpSpillsOverToCurrentHp()
+    {
+        var combatant = new Combatant("Goblin", 10);
+        combatant.SetTemporaryHp(5);
+
+        var applied = combatant.ApplyHpDelta(-8);
+
+        Assert.Equal(0, combatant.TemporaryHp);
+        Assert.Equal(7, combatant.CurrentHp);
+        Assert.Equal(-3, applied);
+    }
+
+    [Fact]
+    public void ApplyHpDelta_DamageWithNoTemporaryHpReducesCurrentHpDirectly()
+    {
+        var combatant = new Combatant("Goblin", 10);
+
+        var applied = combatant.ApplyHpDelta(-4);
+
+        Assert.Equal(0, combatant.TemporaryHp);
+        Assert.Equal(6, combatant.CurrentHp);
+        Assert.Equal(-4, applied);
+    }
+
+    [Fact]
+    public void ApplyHpDelta_HealingDoesNotRestoreTemporaryHp()
+    {
+        var combatant = new Combatant("Goblin", 10);
+        combatant.SetTemporaryHp(5);
+        combatant.ApplyHpDelta(-2); // fully absorbed by temp HP, leaving current HP untouched below max
+
+        combatant.ApplyHpDelta(10);
+
+        Assert.Equal(3, combatant.TemporaryHp);
+        Assert.Equal(10, combatant.CurrentHp);
+    }
+
+    [Fact]
+    public void Duplicate_And_Clone_CopyTemporaryHp()
+    {
+        var original = new Combatant("Goblin", 10);
+        original.SetTemporaryHp(4);
+
+        var duplicate = original.Duplicate();
+        var clone = original.Clone();
+
+        Assert.Equal(4, duplicate.TemporaryHp);
+        Assert.Equal(4, clone.TemporaryHp);
+    }
 }

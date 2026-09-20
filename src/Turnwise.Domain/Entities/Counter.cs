@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Turnwise.Domain.Enums;
 
 namespace Turnwise.Domain.Entities;
 
@@ -23,7 +24,10 @@ public sealed class Counter
     public int Max { get; private set; }
     public bool ShowBar { get; set; }
 
-    public Counter(string name, int current, int max, bool showBar = true, Guid? id = null)
+    /// <summary>Optional Ammunition/Potions/Abilities tag, used to pick an icon for this counter's row.</summary>
+    public CounterCategory? Category { get; set; }
+
+    public Counter(string name, int current, int max, bool showBar = true, Guid? id = null, CounterCategory? category = null)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -40,6 +44,7 @@ public sealed class Counter
         Max = max;
         Current = Math.Clamp(current, 0, max);
         ShowBar = showBar;
+        Category = category;
     }
 
     public void Adjust(int delta)

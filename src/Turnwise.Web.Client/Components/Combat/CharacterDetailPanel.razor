@@ -51,13 +51,6 @@
             </div>
             <div class="detail-title">
                 <input class="name-input-lg" value="@combatant.Name" maxlength="@Combatant.MaxNameLength" @oninput="e => RenameCombatant(combatant, e)" />
-                <select class="category-select category-@(combatant.Category?.ToString().ToLowerInvariant() ?? "none")" title="Category" @onchange="e => SetCategory(combatant, e)">
-                    <option value="" selected="@(combatant.Category is null)">No category</option>
-                    @foreach (var category in Enum.GetValues<CombatantCategory>())
-                    {
-                        <option value="@category" selected="@(combatant.Category == category)">@category</option>
-                    }
-                </select>
             </div>
             @if (combatant.Id == State.Current.ActiveCombatantId)
             {
@@ -65,83 +58,19 @@
             }
         </div>
 
-        <div class="stats-section">
-            @if (!_statsEditMode)
+        <div class="hp-quick-bar">
+            <span class="stats-chip" title="HP"><i class="bi bi-heart-fill"></i> @combatant.CurrentHp/@combatant.MaxHp</span>
+            @if (combatant.TemporaryHp > 0)
             {
-                <div class="stats-compact">
-                    <span class="stats-chip" title="HP"><i class="bi bi-heart-fill"></i> @combatant.CurrentHp/@combatant.MaxHp</span>
-                    <span class="stats-chip" title="Initiative"><i class="bi bi-dice-5-fill"></i> @(combatant.Initiative?.ToString() ?? "—")</span>
-                    <span class="stats-chip" title="Defence"><i class="bi bi-shield-fill"></i> @(combatant.ArmorClass?.ToString() ?? "—")</span>
-                    <div class="stats-control">
-                        <input @bind="_hpDelta" @bind:event="oninput" placeholder="e.g. -14 or +7"
-                               title="Negative = damage, positive = healing" @onkeydown="e => HandleHpDeltaKeyDown(e, combatant)" />
-                        <button class="btn btn-primary btn-sm" @onclick="() => ApplyHpDelta(combatant)">Apply</button>
-                    </div>
-                    <button class="icon-btn" title="Edit HP/Initiative/Defence" @onclick="() => _statsEditMode = true">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                </div>
+                <span class="stats-chip stats-chip-temp" title="Temporary HP - absorbs damage first">
+                    <i class="bi bi-shield-fill"></i> +@combatant.TemporaryHp temp
+                </span>
             }
-            else
-            {
-                <div class="stats-row">
-                    <div class="stats-row-main">
-                        <div class="stats-label">
-                            <span class="stat-icon icon-danger"><i class="bi bi-heart-fill"></i></span>
-                            <span>HP</span>
-                        </div>
-                        <div class="stats-value">
-                            <span class="stat-big">@combatant.CurrentHp</span>
-                            <span class="stat-big-sep">/</span>
-                            <input type="number" class="stat-big-input" value="@combatant.MaxHp"
-                                   title="Max HP" @onchange="e => SetMaxHp(combatant, e)" />
-                        </div>
-                        <div class="stats-control">
-                            <input @bind="_hpDelta" @bind:event="oninput" placeholder="e.g. -14 or +7"
-                                   title="Negative = damage, positive = healing" @onkeydown="e => HandleHpDeltaKeyDown(e, combatant)" />
-                            <button class="btn btn-primary btn-sm" @onclick="() => ApplyHpDelta(combatant)">Apply</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="stats-divider"></div>
-
-                <div class="stats-row">
-                    <div class="stats-row-main">
-                        <div class="stats-label">
-                            <span class="stat-icon icon-accent"><i class="bi bi-dice-5-fill"></i></span>
-                            <span>Initiative</span>
-                        </div>
-                        <div class="stats-value">
-                            <input type="number" class="stat-big-input" value="@combatant.Initiative"
-                                   title="Current initiative" placeholder="—" @onchange="e => SetInitiative(combatant, e)" />
-                        </div>
-                        <div class="stats-control">
-                            <input @bind="combatant.InitiativeFormula" placeholder="e.g. 1d20+2" maxlength="@DiceFormula.MaxNotationLength" />
-                            <button class="btn btn-sm" @onclick="() => RollInitiative(combatant)"><i class="bi bi-dice-6-fill"></i> Roll</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="stats-divider"></div>
-
-                <div class="stats-row">
-                    <div class="stats-row-main">
-                        <div class="stats-label">
-                            <span class="stat-icon icon-accent"><i class="bi bi-shield-fill"></i></span>
-                            <span>Defence</span>
-                        </div>
-                        <div class="stats-value">
-                            <input type="number" class="stat-big-input narrow" value="@combatant.ArmorClass" min="0" placeholder="—"
-                                   title="Defence (leave blank to hide)" @onchange="e => SetArmorClass(combatant, e)" />
-                        </div>
-                    </div>
-                </div>
-
-                <div class="stats-row stats-row-done">
-                    <button class="btn btn-sm btn-primary" @onclick="() => _statsEditMode = false"><i class="bi bi-check-lg"></i> Done</button>
-                </div>
-            }
+            <div class="stats-control">
+                <input @bind="_hpDelta" @bind:event="oninput" placeholder="e.g. -14 or +7"
+                       title="Negative = damage, positive = healing. Damage reduces temporary HP first." @onkeydown="e => HandleHpDeltaKeyDown(e, combatant)" />
+                <button class="btn btn-primary btn-sm" @onclick="() => ApplyHpDelta(combatant)">Apply</button>
+            </div>
         </div>
 
         <div class="section">
@@ -162,6 +91,9 @@
                 </button>
                 <button class="tab-button @(activeTab == "notes" ? "active" : "")" @onclick='() => State.SetActiveTab(combatant.Id, "notes")'>
                     <i class="bi bi-journal-text"></i> Notes
+                </button>
+                <button class="tab-button @(activeTab == "details" ? "active" : "")" @onclick='() => State.SetActiveTab(combatant.Id, "details")'>
+                    <i class="bi bi-sliders"></i> Details
                 </button>
             </div>
 
@@ -193,7 +125,16 @@
                                 @ondragover:preventDefault
                                 @ondrop="() => DropRoll(combatant, index)">
                                 <span class="drag-handle" title="Drag to reorder"><i class="bi bi-grip-vertical"></i></span>
-                                <span class="stat-icon icon-accent"><i class="bi @(NamedRollCategories.GetIcon(roll.Category))"></i></span>
+                                <span class="stat-icon icon-accent">
+                                    @if (NamedRollCategories.IsEmoji(roll.Category))
+                                    {
+                                        <span class="emoji-icon">@NamedRollCategories.WeaponEmoji</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi @(NamedRollCategories.GetIcon(roll.Category))"></i>
+                                    }
+                                </span>
                                 @if (_editingRollId == roll.Id)
                                 {
                                     <input class="inline-edit-input" @bind="_editRollName" placeholder="Name" maxlength="@NamedRoll.MaxNameLength" />
@@ -277,11 +218,18 @@
                                 @ondragover:preventDefault
                                 @ondrop="() => DropCounter(combatant, index)">
                                 <span class="drag-handle" title="Drag to reorder"><i class="bi bi-grip-vertical"></i></span>
-                                <span class="stat-icon icon-accent"><i class="bi bi-hexagon-fill"></i></span>
+                                <span class="stat-icon icon-accent"><i class="bi @(CounterCategories.GetIcon(counter.Category))"></i></span>
                                 @if (_editingCounterId == counter.Id)
                                 {
                                     <input class="inline-edit-input" @bind="_editCounterName" placeholder="Name" maxlength="@Counter.MaxNameLength" />
                                     <input class="inline-edit-input narrow" type="number" min="0" @bind="_editCounterMax" placeholder="Max" />
+                                    <select class="inline-edit-input narrow" @bind="_editCounterCategory">
+                                        <option value="">No category</option>
+                                        @foreach (var category in Enum.GetValues<CounterCategory>())
+                                        {
+                                            <option value="@category">@category</option>
+                                        }
+                                    </select>
                                     <button class="btn btn-sm btn-primary" @onclick="() => SaveCounterEdit(counter)">Save</button>
                                     <button class="btn btn-sm" @onclick="() => _editingCounterId = null">Cancel</button>
                                 }
@@ -313,6 +261,13 @@
                         <div class="add-inline-form">
                             <input @bind="_newCounterName" placeholder="e.g. Ammo, Ki, Rage" maxlength="@Counter.MaxNameLength" />
                             <input type="number" min="0" @bind="_newCounterMax" placeholder="Max" />
+                            <select @bind="_newCounterCategory">
+                                <option value="">No category</option>
+                                @foreach (var category in Enum.GetValues<CounterCategory>())
+                                {
+                                    <option value="@category">@category</option>
+                                }
+                            </select>
                             <button class="btn btn-primary" @onclick="() => AddCounter(combatant)">Add</button>
                         </div>
                     }
@@ -363,12 +318,99 @@
                     }
                 </div>
             }
-            else
+            else if (activeTab == "notes")
             {
                 <div class="tab-content">
                     <textarea class="notes-textarea" value="@combatant.Notes" maxlength="@Combatant.MaxNotesLength"
                               placeholder="Personality, tactics, secrets - whatever's worth remembering about this character."
                               @oninput="e => SetNotes(combatant, e)"></textarea>
+                </div>
+            }
+            else
+            {
+                <div class="tab-content">
+                    <div class="stats-section">
+                        <div class="stats-row">
+                            <div class="stats-row-main">
+                                <div class="stats-label">
+                                    <span class="stat-icon icon-danger"><i class="bi bi-heart-fill"></i></span>
+                                    <span>Max HP</span>
+                                </div>
+                                <div class="stats-value">
+                                    <input type="number" class="stat-big-input" value="@combatant.MaxHp" min="0"
+                                           title="Max HP" @onchange="e => SetMaxHp(combatant, e)" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stats-divider"></div>
+
+                        <div class="stats-row">
+                            <div class="stats-row-main">
+                                <div class="stats-label">
+                                    <span class="stat-icon icon-danger"><i class="bi bi-shield-fill"></i></span>
+                                    <span>Temp HP</span>
+                                </div>
+                                <div class="stats-value">
+                                    <input type="number" class="stat-big-input narrow" value="@combatant.TemporaryHp" min="0"
+                                           title="Temporary HP - absorbs damage before regular HP does" @onchange="e => SetTemporaryHp(combatant, e)" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stats-divider"></div>
+
+                        <div class="stats-row">
+                            <div class="stats-row-main">
+                                <div class="stats-label">
+                                    <span class="stat-icon icon-accent"><i class="bi bi-dice-5-fill"></i></span>
+                                    <span>Initiative</span>
+                                </div>
+                                <div class="stats-value">
+                                    <input type="number" class="stat-big-input" value="@combatant.Initiative"
+                                           title="Current initiative" placeholder="—" @onchange="e => SetInitiative(combatant, e)" />
+                                </div>
+                                <div class="stats-control">
+                                    <input @bind="combatant.InitiativeFormula" placeholder="e.g. 1d20+2" maxlength="@DiceFormula.MaxNotationLength" />
+                                    <button class="btn btn-sm" @onclick="() => RollInitiative(combatant)"><i class="bi bi-dice-6-fill"></i> Roll</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stats-divider"></div>
+
+                        <div class="stats-row">
+                            <div class="stats-row-main">
+                                <div class="stats-label">
+                                    <span class="stat-icon icon-accent"><i class="bi bi-shield-fill"></i></span>
+                                    <span>Defence</span>
+                                </div>
+                                <div class="stats-value">
+                                    <input type="number" class="stat-big-input narrow" value="@combatant.ArmorClass" min="0" placeholder="—"
+                                           title="Defence (leave blank to hide)" @onchange="e => SetArmorClass(combatant, e)" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stats-divider"></div>
+
+                        <div class="stats-row">
+                            <div class="stats-row-main">
+                                <div class="stats-label">
+                                    <span>Category</span>
+                                </div>
+                                <div class="stats-value">
+                                    <select class="category-select category-@(combatant.Category?.ToString().ToLowerInvariant() ?? "none")" title="Category" @onchange="e => SetCategory(combatant, e)">
+                                        <option value="" selected="@(combatant.Category is null)">No category</option>
+                                        @foreach (var category in Enum.GetValues<CombatantCategory>())
+                                        {
+                                            <option value="@category" selected="@(combatant.Category == category)">@category</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             }
         </div>
@@ -381,7 +423,6 @@
 </div>
 
 @code {
-    private bool _statsEditMode;
     private string _hpDelta = "";
     private bool _showAddRoll;
     private bool _showAddCounter;
@@ -391,6 +432,7 @@
     private string _newRollCategory = "";
     private string _newCounterName = "";
     private int _newCounterMax = 3;
+    private string _newCounterCategory = "";
     private int? _draggedRollIndex;
     private int? _draggedCounterIndex;
     private Guid? _editingRollId;
@@ -400,11 +442,15 @@
     private Guid? _editingCounterId;
     private string _editCounterName = "";
     private int _editCounterMax;
+    private string _editCounterCategory = "";
     private string? _error;
 
     private string? _openMenuTriggerId;
     private ElementReference _menuRef;
     private IJSObjectReference? _menuModule;
+    private IJSObjectReference? _outsideClickHandle;
+    private string? _outsideClickHandleTriggerId;
+    private DotNetObjectReference<CharacterDetailPanel>? _dotNetRef;
 
     private static bool HasPortrait(Combatant c) => !string.IsNullOrEmpty(c.PortraitBase64);
 
@@ -435,26 +481,69 @@
     private void ToggleMenu(string triggerId) =>
         _openMenuTriggerId = _openMenuTriggerId == triggerId ? null : triggerId;
 
+    [JSInvokable]
+    public void OnClickOutsideMenu()
+    {
+        _openMenuTriggerId = null;
+        StateHasChanged();
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         await base.OnAfterRenderAsync(firstRender);
 
-        if (_openMenuTriggerId is not null)
+        try
         {
-            try
+            if (_openMenuTriggerId is not null)
             {
                 _menuModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/dropdownMenu.js");
                 await _menuModule.InvokeVoidAsync("positionMenu", _openMenuTriggerId, _menuRef);
+
+                if (_outsideClickHandleTriggerId != _openMenuTriggerId)
+                {
+                    await DisposeOutsideClickHandleAsync();
+                    _dotNetRef ??= DotNetObjectReference.Create(this);
+                    _outsideClickHandle = await _menuModule.InvokeAsync<IJSObjectReference>(
+                        "registerOutsideClick", _openMenuTriggerId, _menuRef, _dotNetRef);
+                    _outsideClickHandleTriggerId = _openMenuTriggerId;
+                }
             }
-            catch (JSDisconnectedException)
+            else
             {
-                // circuit is going away - nothing to position
+                await DisposeOutsideClickHandleAsync();
             }
         }
+        catch (JSDisconnectedException)
+        {
+            // circuit is going away - nothing to position or register
+        }
+    }
+
+    private async Task DisposeOutsideClickHandleAsync()
+    {
+        if (_outsideClickHandle is null)
+        {
+            return;
+        }
+
+        var handle = _outsideClickHandle;
+        _outsideClickHandle = null;
+        _outsideClickHandleTriggerId = null;
+        await handle.InvokeVoidAsync("dispose");
+        await handle.DisposeAsync();
     }
 
     protected override async ValueTask DisposeAsyncCore()
     {
+        try
+        {
+            await DisposeOutsideClickHandleAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // circuit already gone
+        }
+
         if (_menuModule is not null)
         {
             try
@@ -466,6 +555,8 @@
                 // circuit already gone
             }
         }
+
+        _dotNetRef?.Dispose();
     }
 
     private void RenameCombatant(Combatant combatant, ChangeEventArgs e)
@@ -510,6 +601,20 @@
         if (int.TryParse(e.Value?.ToString(), out var value) && value >= 0)
         {
             combatant.SetMaxHp(value);
+        }
+        State.NotifyChanged();
+    }
+
+    private void SetTemporaryHp(Combatant combatant, ChangeEventArgs e)
+    {
+        var text = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            combatant.SetTemporaryHp(0);
+        }
+        else if (int.TryParse(text, out var value) && value >= 0)
+        {
+            combatant.SetTemporaryHp(value);
         }
         State.NotifyChanged();
     }
@@ -680,9 +785,11 @@
             return;
         }
 
-        combatant.AddCounter(_newCounterName, _newCounterMax, _newCounterMax);
+        var category = Enum.TryParse<CounterCategory>(_newCounterCategory, out var parsedCategory) ? parsedCategory : (CounterCategory?)null;
+        combatant.AddCounter(_newCounterName, _newCounterMax, _newCounterMax, category: category);
         _newCounterName = "";
         _newCounterMax = 3;
+        _newCounterCategory = "";
         _showAddCounter = false;
         State.NotifyChanged();
     }
@@ -702,6 +809,7 @@
         _editingCounterId = counter.Id;
         _editCounterName = counter.Name;
         _editCounterMax = counter.Max;
+        _editCounterCategory = counter.Category?.ToString() ?? "";
         _openMenuTriggerId = null;
     }
 
@@ -714,6 +822,7 @@
 
         counter.Name = _editCounterName.Trim();
         counter.SetMax(_editCounterMax);
+        counter.Category = Enum.TryParse<CounterCategory>(_editCounterCategory, out var parsedCategory) ? parsedCategory : (CounterCategory?)null;
         _editingCounterId = null;
         State.NotifyChanged();
     }

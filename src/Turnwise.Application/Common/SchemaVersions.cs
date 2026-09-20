@@ -8,15 +8,16 @@ public static class SchemaVersions
 {
     /// <summary>
     /// Bumped for: dropping Combatant.MaxHpLocked/InitiativeLocked (the lock buttons were replaced
-    /// by an edit-mode toggle, a UI-only concept now) and adding NamedRoll.Category. Both are safe
-    /// for files at <see cref="MinSupportedCharacterSchemaVersion"/>: the dropped fields are simply
-    /// ignored on load, and the new field comes back empty.
+    /// by an edit-mode toggle, a UI-only concept now), adding NamedRoll.Category, adding
+    /// Combatant.TemporaryHp, and adding Counter.Category. All are safe for files at
+    /// <see cref="MinSupportedCharacterSchemaVersion"/>: dropped fields are simply ignored on
+    /// load, and new fields come back empty/zero.
     /// </summary>
-    public const int CurrentCharacterSchemaVersion = 5;
+    public const int CurrentCharacterSchemaVersion = 6;
     public const int MinSupportedCharacterSchemaVersion = 3;
 
     /// <summary>Bumped alongside <see cref="CurrentCharacterSchemaVersion"/>, same reasoning (encounter files embed full combatant sheets and their own log, which gained CombatLogEntry.RollCategory).</summary>
-    public const int CurrentEncounterSchemaVersion = 7;
+    public const int CurrentEncounterSchemaVersion = 8;
     public const int MinSupportedEncounterSchemaVersion = 5;
 
     /// <summary>Portrait images embedded as base64 are capped to keep character files a reasonable size.</summary>

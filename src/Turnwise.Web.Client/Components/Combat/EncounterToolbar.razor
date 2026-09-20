@@ -47,8 +47,17 @@
     private bool _menuOpen;
     private ElementReference _menuRef;
     private IJSObjectReference? _menuModule;
+    private IJSObjectReference? _outsideClickHandle;
+    private DotNetObjectReference<EncounterToolbar>? _dotNetRef;
 
     private void ToggleMenu() => _menuOpen = !_menuOpen;
+
+    [JSInvokable]
+    public void OnClickOutsideMenu()
+    {
+        _menuOpen = false;
+        StateHasChanged();
+    }
 
     private void NewEncounter()
     {
@@ -87,22 +96,54 @@
     {
         await base.OnAfterRenderAsync(firstRender);
 
-        if (_menuOpen)
+        try
         {
-            try
+            if (_menuOpen)
             {
                 _menuModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/dropdownMenu.js");
                 await _menuModule.InvokeVoidAsync("positionMenu", "menu-trigger-settings", _menuRef);
+                if (_outsideClickHandle is null)
+                {
+                    _dotNetRef ??= DotNetObjectReference.Create(this);
+                    _outsideClickHandle = await _menuModule.InvokeAsync<IJSObjectReference>(
+                        "registerOutsideClick", "menu-trigger-settings", _menuRef, _dotNetRef);
+                }
             }
-            catch (JSDisconnectedException)
+            else
             {
-                // circuit is going away - nothing to position
+                await DisposeOutsideClickHandleAsync();
             }
         }
+        catch (JSDisconnectedException)
+        {
+            // circuit is going away - nothing to position or register
+        }
+    }
+
+    private async Task DisposeOutsideClickHandleAsync()
+    {
+        if (_outsideClickHandle is null)
+        {
+            return;
+        }
+
+        var handle = _outsideClickHandle;
+        _outsideClickHandle = null;
+        await handle.InvokeVoidAsync("dispose");
+        await handle.DisposeAsync();
     }
 
     protected override async ValueTask DisposeAsyncCore()
     {
+        try
+        {
+            await DisposeOutsideClickHandleAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // circuit already gone
+        }
+
         if (_menuModule is not null)
         {
             try
@@ -114,6 +155,8 @@
                 // circuit already gone
             }
         }
+
+        _dotNetRef?.Dispose();
     }
 
     private static string Sanitize(string name) =>

@@ -443,6 +443,10 @@ button:hover {
     background: var(--tw-danger);
 }
 
+.hp-bar-fill.temp-boosted {
+    background: var(--tw-accent);
+}
+
 /* App header */
 
 .app-header {
@@ -600,6 +604,13 @@ button:hover {
     .main-grid {
         grid-template-columns: 1fr;
     }
+
+    /* .app-shell isn't height-capped on mobile (the stacked columns need their natural
+       height), so without this the initiative list grows without bound with many
+       combatants and pushes the character form and combat log out of easy reach. */
+    .col-initiative .panel {
+        max-height: 45vh;
+    }
 }
 
 /* Initiative list */
@@ -734,11 +745,6 @@ button:hover {
     background: var(--tw-accent-soft);
 }
 
-.combatant-card.active {
-    background: var(--tw-success-soft);
-    box-shadow: 0 0 0 2px var(--tw-success);
-}
-
 .bulk-select-checkbox {
     width: 1.05rem;
     height: 1.05rem;
@@ -797,6 +803,11 @@ button:hover {
     min-width: 1.6rem;
 }
 
+.combatant-init .bi {
+    font-size: 0.75rem;
+    color: var(--tw-text-faint);
+}
+
 .combatant-init .value {
     display: block;
     font-size: 0.85rem;
@@ -824,6 +835,20 @@ button:hover {
 
 .combatant-hp .hp-bar {
     height: 0.7rem;
+}
+
+.hp-text {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--tw-text-faint);
+    text-align: right;
+    margin-top: 0.15rem;
+}
+
+.hp-temp-text {
+    color: var(--tw-accent);
+    font-weight: 600;
+    margin-left: 0.2rem;
 }
 
 .add-combatant-form {
@@ -1491,6 +1516,12 @@ button:hover {
 .log-type-icon {
     color: var(--tw-accent);
     margin-right: 0.3rem;
+}
+
+.emoji-icon {
+    font-size: 0.9em;
+    line-height: 1;
+    font-style: normal;
 }
 
 /* Blazor's default unhandled-exception banner (#blazor-error-ui in MainLayout.razor) -

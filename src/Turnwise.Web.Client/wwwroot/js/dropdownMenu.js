@@ -27,3 +27,23 @@ export function positionMenu(triggerId, menuEl) {
     menuEl.style.left = `${left}px`;
     menuEl.style.right = "auto";
 }
+
+/// Closes a dropdown menu when the user clicks anywhere outside it (and outside its trigger
+/// button, so the trigger's own click handler is the only thing that re-toggles it). Uses
+/// "mousedown" rather than "click" so this fires - and can call back into .NET - before the
+/// browser's later "click" event reaches the trigger button's own Blazor handler.
+export function registerOutsideClick(triggerId, menuEl, dotNetRef) {
+    const handler = (event) => {
+        const trigger = document.getElementById(triggerId);
+        if (menuEl.contains(event.target) || (trigger && trigger.contains(event.target))) {
+            return;
+        }
+        dotNetRef.invokeMethodAsync("OnClickOutsideMenu");
+    };
+
+    document.addEventListener("mousedown", handler, true);
+
+    return {
+        dispose: () => document.removeEventListener("mousedown", handler, true)
+    };
+}

@@ -23,7 +23,14 @@
         {
             <li @key="entry.Id">
                 <span class="log-time">@entry.Timestamp.ToLocalTime().ToString("HH:mm")</span>
-                <i class="bi @(IconFor(entry)) log-type-icon" title="@FormatType(entry.Type)"></i>
+                @if (IsWeaponRoll(entry))
+                {
+                    <span class="emoji-icon log-type-icon" title="@FormatType(entry.Type)">@NamedRollCategories.WeaponEmoji</span>
+                }
+                else
+                {
+                    <i class="bi @(IconFor(entry)) log-type-icon" title="@FormatType(entry.Type)"></i>
+                }
                 @entry.Message
                 @if (!string.IsNullOrEmpty(entry.Result))
                 {
@@ -71,6 +78,10 @@
         entry.Type == CombatLogEntryType.DiceRoll && entry.RollCategory is { } category
             ? NamedRollCategories.GetIcon(category)
             : IconFor(entry.Type);
+
+    /// <summary>Weapon rolls render as an emoji instead of a "bi-*" icon class - see <see cref="NamedRollCategories.IsEmoji"/>.</summary>
+    private static bool IsWeaponRoll(CombatLogEntry entry) =>
+        entry.Type == CombatLogEntryType.DiceRoll && NamedRollCategories.IsEmoji(entry.RollCategory);
 
     private static string FormatType(CombatLogEntryType type) => type switch
     {

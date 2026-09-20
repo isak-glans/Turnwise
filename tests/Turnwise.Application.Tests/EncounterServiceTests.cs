@@ -45,6 +45,35 @@ public class EncounterServiceTests
     }
 
     [Fact]
+    public void ApplyHpDelta_DamageAbsorbedByTemporaryHpIsNotedInTheLogMessage()
+    {
+        var service = MakeService();
+        var encounter = new Encounter();
+        var combatant = new Combatant("Goblin", 20);
+        combatant.SetTemporaryHp(5);
+        encounter.AddCombatant(combatant);
+
+        service.ApplyHpDelta(encounter, combatant.Id, -3);
+
+        Assert.Equal(20, combatant.CurrentHp);
+        Assert.Equal(2, combatant.TemporaryHp);
+        Assert.Contains("3 absorbed by temporary HP", Assert.Single(encounter.Log).Message);
+    }
+
+    [Fact]
+    public void ApplyHpDelta_DamageWithNoTemporaryHpOmitsTheAbsorbedNote()
+    {
+        var service = MakeService();
+        var encounter = new Encounter();
+        var combatant = new Combatant("Goblin", 20);
+        encounter.AddCombatant(combatant);
+
+        service.ApplyHpDelta(encounter, combatant.Id, -3);
+
+        Assert.DoesNotContain("absorbed by temporary HP", Assert.Single(encounter.Log).Message);
+    }
+
+    [Fact]
     public void RollInitiative_SetsInitiativeFromFormulaAndLogs()
     {
         var service = MakeService(15);
@@ -155,6 +184,23 @@ public class EncounterServiceTests
 
         Assert.Equal(18, a.CurrentHp);
         Assert.Equal(14, b.CurrentHp);
+    }
+
+    [Fact]
+    public void ApplyRolledDamageToMany_DamageAbsorbedByTemporaryHpIsNotedInTheLogMessage()
+    {
+        var service = MakeService(5); // 1d6 -> 5
+        var encounter = new Encounter();
+        var a = new Combatant("A", 20);
+        a.SetTemporaryHp(2);
+        encounter.AddCombatant(a);
+        var formula = Domain.ValueObjects.DiceFormula.Parse("1d6");
+
+        service.ApplyRolledDamageToMany(encounter, [a.Id], formula, sharedRoll: true);
+
+        Assert.Equal(17, a.CurrentHp);
+        Assert.Equal(0, a.TemporaryHp);
+        Assert.Contains("2 absorbed by temporary HP", Assert.Single(encounter.Log).Message);
     }
 
     [Fact]

@@ -18,7 +18,9 @@ public class JsonCharacterTemplateStoreTests
             Notes = "Hiding in the bushes."
         };
         goblin.SetArmorClass(15);
+        goblin.SetTemporaryHp(3);
         goblin.AddNamedRoll("Scimitar", Domain.ValueObjects.DiceFormula.Parse("1d6+2"), category: NamedRollCategory.Weapon);
+        goblin.AddCounter("Ammo", 10, 20, category: CounterCategory.Ammunition);
         goblin.AddCondition("Poisoned");
 
         await using var stream = new MemoryStream();
@@ -29,11 +31,14 @@ public class JsonCharacterTemplateStoreTests
         Assert.Equal(goblin.Name, loaded.Name);
         Assert.Equal(goblin.MaxHp, loaded.MaxHp);
         Assert.Equal(goblin.ArmorClass, loaded.ArmorClass);
+        Assert.Equal(3, loaded.TemporaryHp);
         Assert.Equal(CombatantCategory.Enemy, loaded.Category);
         Assert.Equal("Hiding in the bushes.", loaded.Notes);
         Assert.Single(loaded.NamedRolls);
         Assert.Equal("Scimitar", loaded.NamedRolls[0].Name);
         Assert.Equal(NamedRollCategory.Weapon, loaded.NamedRolls[0].Category);
+        Assert.Single(loaded.Counters);
+        Assert.Equal(CounterCategory.Ammunition, loaded.Counters[0].Category);
         Assert.Single(loaded.Conditions);
         Assert.Equal("Poisoned", loaded.Conditions[0].Name);
     }
@@ -62,5 +67,33 @@ public class JsonCharacterTemplateStoreTests
 
         Assert.Null(loaded.Category);
         Assert.Equal("", loaded.Notes);
+        Assert.Equal(0, loaded.TemporaryHp);
+    }
+
+    [Fact]
+    public async Task Load_FileWithoutTemporaryHpOrCounterCategoryFields_DefaultsToZeroAndNull()
+    {
+        // Simulates a character file saved before TemporaryHp/Counter.Category existed (schema version 5).
+        var json = """
+        {
+          "SchemaVersion": 5,
+          "Character": {
+            "Id": "11111111-1111-1111-1111-111111111111",
+            "Name": "Old Fighter",
+            "MaxHp": 20,
+            "CurrentHp": 20,
+            "Counters": [
+              { "Id": "22222222-2222-2222-2222-222222222222", "Name": "Ki", "Current": 3, "Max": 4 }
+            ]
+          }
+        }
+        """;
+        var store = new JsonCharacterTemplateStore();
+        await using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
+
+        var loaded = await store.LoadAsync(stream);
+
+        Assert.Equal(0, loaded.TemporaryHp);
+        Assert.Null(loaded.Counters[0].Category);
     }
 }

@@ -46,6 +46,10 @@ public sealed class Combatant
 
     public int MaxHp { get; private set; }
     public int CurrentHp { get; private set; }
+
+    /// <summary>Extra HP that absorbs damage before <see cref="CurrentHp"/> does (see <see cref="ApplyHpDelta"/>). Not capped by <see cref="MaxHp"/> - it's a separate pool on top.</summary>
+    public int TemporaryHp { get; private set; }
+
     public int? ArmorClass { get; private set; }
 
     public string? InitiativeFormula { get; set; }
@@ -98,7 +102,8 @@ public sealed class Combatant
         int? initiative,
         int? armorClass = null,
         CombatantCategory? category = null,
-        string notes = "")
+        string notes = "",
+        int temporaryHp = 0)
     {
         var combatant = new Combatant(name, maxHp, id)
         {
@@ -110,6 +115,7 @@ public sealed class Combatant
         };
         combatant.SetInitiative(initiative);
         combatant.SetArmorClass(armorClass);
+        combatant.SetTemporaryHp(temporaryHp);
         return combatant;
     }
 
@@ -120,7 +126,7 @@ public sealed class Combatant
     /// </summary>
     public Combatant Duplicate()
     {
-        var clone = Restore(Guid.NewGuid(), Name, MaxHp, CurrentHp, PortraitBase64, InitiativeFormula, null, ArmorClass, Category, Notes);
+        var clone = Restore(Guid.NewGuid(), Name, MaxHp, CurrentHp, PortraitBase64, InitiativeFormula, null, ArmorClass, Category, Notes, TemporaryHp);
 
         foreach (var roll in _namedRolls)
         {
@@ -129,7 +135,7 @@ public sealed class Combatant
 
         foreach (var counter in _counters)
         {
-            clone.AddCounter(counter.Name, counter.Current, counter.Max, counter.ShowBar);
+            clone.AddCounter(counter.Name, counter.Current, counter.Max, counter.ShowBar, category: counter.Category);
         }
 
         foreach (var condition in _conditions)
@@ -148,7 +154,7 @@ public sealed class Combatant
     /// </summary>
     public Combatant Clone()
     {
-        var clone = Restore(Id, Name, MaxHp, CurrentHp, PortraitBase64, InitiativeFormula, Initiative, ArmorClass, Category, Notes);
+        var clone = Restore(Id, Name, MaxHp, CurrentHp, PortraitBase64, InitiativeFormula, Initiative, ArmorClass, Category, Notes, TemporaryHp);
 
         foreach (var roll in _namedRolls)
         {
@@ -157,7 +163,7 @@ public sealed class Combatant
 
         foreach (var counter in _counters)
         {
-            clone.AddCounter(counter.Name, counter.Current, counter.Max, counter.ShowBar, counter.Id);
+            clone.AddCounter(counter.Name, counter.Current, counter.Max, counter.ShowBar, counter.Id, counter.Category);
         }
 
         foreach (var condition in _conditions)
@@ -168,15 +174,29 @@ public sealed class Combatant
         return clone;
     }
 
-    /// <summary>Applies a signed HP delta (negative = damage, positive = healing), clamped to [0, MaxHp].</summary>
-    /// <returns>The HP change that was actually applied, after clamping.</returns>
+    /// <summary>
+    /// Applies a signed HP delta (negative = damage, positive = healing). Damage is taken from
+    /// <see cref="TemporaryHp"/> first, and only the remainder (if any) reduces
+    /// <see cref="CurrentHp"/>, which stays clamped to [0, MaxHp]. Healing only ever affects
+    /// CurrentHp - it does not restore spent temporary HP, which is set explicitly instead.
+    /// </summary>
+    /// <returns>The change actually applied to CurrentHp, after clamping and temp HP absorption - see <see cref="TemporaryHp"/> for how much of a damage delta was absorbed instead.</returns>
     public int ApplyHpDelta(int delta)
     {
         var before = CurrentHp;
-        // Widen to long first: CurrentHp + delta can overflow int when delta comes from
-        // unbounded free-text input (e.g. int.MaxValue), which would otherwise wrap around
-        // to a huge negative number before Clamp ever sees it.
-        var target = (long)CurrentHp + delta;
+
+        // Widen to long first: the delta can overflow int when it comes from unbounded
+        // free-text input (e.g. int.MaxValue), which would otherwise wrap around to a huge
+        // negative number before Clamp ever sees it.
+        long remaining = delta;
+        if (remaining < 0 && TemporaryHp > 0)
+        {
+            var absorbed = Math.Min(TemporaryHp, -remaining);
+            TemporaryHp -= (int)absorbed;
+            remaining += absorbed;
+        }
+
+        var target = (long)CurrentHp + remaining;
         CurrentHp = (int)Math.Clamp(target, 0, MaxHp);
         return CurrentHp - before;
     }
@@ -193,6 +213,16 @@ public sealed class Combatant
     }
 
     public void SetInitiative(int? value) => Initiative = value;
+
+    public void SetTemporaryHp(int value)
+    {
+        if (value < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(value), "Temporary HP cannot be negative.");
+        }
+
+        TemporaryHp = value;
+    }
 
     public void SetArmorClass(int? value)
     {
@@ -234,9 +264,9 @@ public sealed class Combatant
         return clone;
     }
 
-    public Counter AddCounter(string name, int current, int max, bool showBar = true, Guid? id = null)
+    public Counter AddCounter(string name, int current, int max, bool showBar = true, Guid? id = null, CounterCategory? category = null)
     {
-        var counter = new Counter(name, current, max, showBar, id);
+        var counter = new Counter(name, current, max, showBar, id, category);
         _counters.Add(counter);
         return counter;
     }
@@ -256,7 +286,7 @@ public sealed class Combatant
         }
 
         var original = _counters[index];
-        var clone = new Counter(original.Name, original.Current, original.Max, original.ShowBar);
+        var clone = new Counter(original.Name, original.Current, original.Max, original.ShowBar, category: original.Category);
         _counters.Insert(index + 1, clone);
         return clone;
     }

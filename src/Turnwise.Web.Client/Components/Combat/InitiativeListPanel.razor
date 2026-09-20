@@ -102,6 +102,7 @@
                 </div>
                 <div class="combatant-row-bottom">
                     <span class="combatant-init" title="Initiative">
+                        <i class="bi bi-dice-5-fill"></i>
                         <span class="value">@(combatant.Initiative?.ToString() ?? "—")</span>
                     </span>
                     @if (combatant.ArmorClass.HasValue)
@@ -117,6 +118,13 @@
                     <span class="combatant-hp" title="@($"{combatant.CurrentHp} / {combatant.MaxHp} HP")">
                         <span class="hp-bar">
                             <span class="hp-bar-fill @HpFillClass(combatant)" style="width:@(HpPercent(combatant))%"></span>
+                        </span>
+                        <span class="hp-text">
+                            @combatant.CurrentHp / @combatant.MaxHp@(" ")
+                            @if (combatant.TemporaryHp > 0)
+                            {
+                                <span class="hp-temp-text">+@combatant.TemporaryHp</span>
+                            }
                         </span>
                     </span>
                 </div>
@@ -169,6 +177,11 @@
 
     private static string HpFillClass(Combatant c)
     {
+        if (c.TemporaryHp > 0)
+        {
+            return "temp-boosted";
+        }
+
         var percent = HpPercent(c);
         return percent switch
         {

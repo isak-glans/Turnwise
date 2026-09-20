@@ -56,16 +56,19 @@ public sealed class EncounterService(DiceRollingService diceRoller)
     public int ApplyHpDelta(Encounter encounter, Guid combatantId, int delta)
     {
         var combatant = GetCombatant(encounter, combatantId);
+        var tempBefore = combatant.TemporaryHp;
         var applied = combatant.ApplyHpDelta(delta);
+        var tempAbsorbed = tempBefore - combatant.TemporaryHp;
 
         var sign = applied >= 0 ? "+" : "";
-        var verb = applied switch
+        var verb = delta switch
         {
             < 0 => "takes damage",
             > 0 => "heals",
             _ => "HP unchanged"
         };
-        var message = $"{combatant.Name} {verb}, now at {combatant.CurrentHp}/{combatant.MaxHp} HP";
+        var tempNote = tempAbsorbed > 0 ? $" ({tempAbsorbed} absorbed by temporary HP)" : "";
+        var message = $"{combatant.Name} {verb}{tempNote}, now at {combatant.CurrentHp}/{combatant.MaxHp} HP";
         encounter.AddLogEntry(new CombatLogEntry(CombatLogEntryType.HpChange, message, combatant.Id, result: $"{sign}{applied}"));
 
         return applied;
@@ -100,8 +103,11 @@ public sealed class EncounterService(DiceRollingService diceRoller)
             var roll = shared ?? diceRoller.Roll(formula);
             results[id] = roll;
 
+            var tempBefore = combatant.TemporaryHp;
             combatant.ApplyHpDelta(-roll.Total);
-            var message = $"{combatant.Name} takes {formula} damage: {roll.Breakdown}, now at {combatant.CurrentHp}/{combatant.MaxHp} HP";
+            var tempAbsorbed = tempBefore - combatant.TemporaryHp;
+            var tempNote = tempAbsorbed > 0 ? $" ({tempAbsorbed} absorbed by temporary HP)" : "";
+            var message = $"{combatant.Name} takes {formula} damage: {roll.Breakdown}{tempNote}, now at {combatant.CurrentHp}/{combatant.MaxHp} HP";
             encounter.AddLogEntry(new CombatLogEntry(CombatLogEntryType.HpChange, message, combatant.Id, result: $"-{roll.Total}"));
         }
 

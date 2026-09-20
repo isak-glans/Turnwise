@@ -7,9 +7,14 @@ public static class NamedRollCategories
 {
     private const string DefaultIcon = "bi-dice-6-fill";
 
+    /// <summary>Weapon has no fitting Bootstrap Icon, so it's rendered as this emoji instead of a "bi-*" class - see <see cref="IsEmoji"/>.</summary>
+    public const string WeaponEmoji = "⚔️";
+
+    /// <summary>True when <see cref="GetIcon"/> doesn't apply and <see cref="WeaponEmoji"/> should be rendered as text instead of a "bi-*" icon class.</summary>
+    public static bool IsEmoji(NamedRollCategory? category) => category == NamedRollCategory.Weapon;
+
     public static string GetIcon(NamedRollCategory? category) => category switch
     {
-        NamedRollCategory.Weapon => "bi-hammer",
         NamedRollCategory.Magic => "bi-magic",
         NamedRollCategory.Skill => "bi-mortarboard-fill",
         _ => DefaultIcon
