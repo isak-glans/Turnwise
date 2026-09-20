@@ -640,21 +640,13 @@ button:hover {
 }
 
 .combatant-list-header {
-    display: grid;
-    grid-template-columns: auto auto auto auto auto minmax(0, 1fr) auto auto;
+    display: flex;
     align-items: center;
-    gap: 0.55rem;
+    gap: 0.4rem;
     padding: 0 0.7rem;
     margin-bottom: 0.35rem;
-}
-
-.combatant-list-header .col-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--tw-text-faint);
-    text-align: center;
+    font-size: 0.8rem;
+    color: var(--tw-text-dim);
 }
 
 .combatant-card {
@@ -709,10 +701,6 @@ button:hover {
 }
 
 @media (max-width: 600px) {
-    .combatant-list-header {
-        display: none;
-    }
-
     .combatant-card {
         display: flex;
         flex-direction: column;
@@ -798,39 +786,47 @@ button:hover {
     color: var(--tw-text-faint);
 }
 
-.combatant-init {
-    text-align: center;
-    min-width: 1.6rem;
+.col-heading {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--tw-text-faint);
+    margin-bottom: 0.1rem;
 }
 
-.combatant-init .bi {
-    font-size: 0.75rem;
-    color: var(--tw-text-faint);
+.combatant-init {
+    text-align: center;
+    min-width: 2.2rem;
 }
 
 .combatant-init .value {
     display: block;
     font-size: 0.85rem;
     font-weight: 600;
-    color: var(--tw-text-faint);
+    color: var(--tw-text);
 }
 
 .combatant-ac {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--tw-text-dim);
+    text-align: center;
+    min-width: 2rem;
 }
 
-.combatant-ac i {
-    color: var(--tw-text-faint);
+.combatant-ac .value {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--tw-text);
 }
 
 .combatant-hp {
     min-width: 6rem;
     margin-left: 0.35rem;
+}
+
+.combatant-hp .col-heading {
+    text-align: right;
 }
 
 .combatant-hp .hp-bar {
@@ -839,10 +835,11 @@ button:hover {
 
 .hp-text {
     display: block;
-    font-size: 0.7rem;
-    color: var(--tw-text-faint);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--tw-text);
     text-align: right;
-    margin-top: 0.15rem;
+    margin-bottom: 0.2rem;
 }
 
 .hp-temp-text {
@@ -882,6 +879,14 @@ button:hover {
     display: flex;
     align-items: center;
     gap: 0.8rem;
+    margin-bottom: 1rem;
+}
+
+.hp-quick-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
     margin-bottom: 1rem;
 }
 

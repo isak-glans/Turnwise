@@ -118,6 +118,65 @@ public class EncounterServiceTests
     }
 
     [Fact]
+    public void RollMaxHp_SetsMaxHpFromFormulaAndLogs()
+    {
+        var service = MakeService(4, 4, 4, 4, 4, 4, 4, 4); // 8d6 -> 32
+        var encounter = new Encounter();
+        var combatant = new Combatant("Fighter", 1)
+        {
+            MaxHpFormula = "8d6+16"
+        };
+        encounter.AddCombatant(combatant);
+
+        var result = service.RollMaxHp(encounter, combatant.Id);
+
+        Assert.Equal(48, result.Total);
+        Assert.Equal(48, combatant.MaxHp);
+        Assert.Contains(encounter.Log, e => e.Type == CombatLogEntryType.HpChange);
+        Assert.Equal("48", Assert.Single(encounter.Log).Result);
+    }
+
+    [Fact]
+    public void RollMaxHp_ThrowsWhenNoFormulaSet()
+    {
+        var service = MakeService();
+        var encounter = new Encounter();
+        var combatant = new Combatant("Fighter", 20);
+        encounter.AddCombatant(combatant);
+
+        Assert.Throws<InvalidOperationException>(() => service.RollMaxHp(encounter, combatant.Id));
+    }
+
+    [Fact]
+    public void RollMaxHp_LowerResultReducesCurrentHpButHigherResultLeavesItUntouched()
+    {
+        var service = MakeService(1); // 1d4 -> 1
+        var encounter = new Encounter();
+        var combatant = new Combatant("Fighter", 20) { MaxHpFormula = "1d4" }; // CurrentHp starts at 20
+        encounter.AddCombatant(combatant);
+
+        service.RollMaxHp(encounter, combatant.Id);
+
+        Assert.Equal(1, combatant.MaxHp);
+        Assert.Equal(1, combatant.CurrentHp); // clamped down, since it exceeded the new Max HP
+    }
+
+    [Fact]
+    public void RollMaxHp_HigherResultDoesNotRaiseCurrentHp()
+    {
+        var service = MakeService(6, 6); // 2d6 -> 12
+        var encounter = new Encounter();
+        var combatant = new Combatant("Fighter", 20) { MaxHpFormula = "2d6" };
+        encounter.AddCombatant(combatant);
+        service.ApplyHpDelta(encounter, combatant.Id, -15); // CurrentHp down to 5
+
+        service.RollMaxHp(encounter, combatant.Id);
+
+        Assert.Equal(12, combatant.MaxHp);
+        Assert.Equal(5, combatant.CurrentHp); // untouched - well below the new Max HP
+    }
+
+    [Fact]
     public void DuplicateCombatant_InsertsCloneRightAfterOriginal()
     {
         var service = MakeService();

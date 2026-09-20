@@ -428,4 +428,19 @@ public class CombatantTests
         Assert.Equal(4, duplicate.TemporaryHp);
         Assert.Equal(4, clone.TemporaryHp);
     }
+
+    [Fact]
+    public void Duplicate_And_Clone_CopyMaxHpFormula()
+    {
+        var original = new Combatant("Goblin", 10)
+        {
+            MaxHpFormula = "8d6+16"
+        };
+
+        var duplicate = original.Duplicate();
+        var clone = original.Clone();
+
+        Assert.Equal("8d6+16", duplicate.MaxHpFormula);
+        Assert.Equal("8d6+16", clone.MaxHpFormula);
+    }
 }

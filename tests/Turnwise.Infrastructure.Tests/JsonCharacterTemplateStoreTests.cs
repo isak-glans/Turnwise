@@ -14,6 +14,7 @@ public class JsonCharacterTemplateStoreTests
         var goblin = new Combatant("Goblin", 7)
         {
             InitiativeFormula = "1d20+2",
+            MaxHpFormula = "2d6",
             Category = CombatantCategory.Enemy,
             Notes = "Hiding in the bushes."
         };
@@ -30,6 +31,7 @@ public class JsonCharacterTemplateStoreTests
 
         Assert.Equal(goblin.Name, loaded.Name);
         Assert.Equal(goblin.MaxHp, loaded.MaxHp);
+        Assert.Equal("2d6", loaded.MaxHpFormula);
         Assert.Equal(goblin.ArmorClass, loaded.ArmorClass);
         Assert.Equal(3, loaded.TemporaryHp);
         Assert.Equal(CombatantCategory.Enemy, loaded.Category);
@@ -95,5 +97,6 @@ public class JsonCharacterTemplateStoreTests
 
         Assert.Equal(0, loaded.TemporaryHp);
         Assert.Null(loaded.Counters[0].Category);
+        Assert.Null(loaded.MaxHpFormula);
     }
 }

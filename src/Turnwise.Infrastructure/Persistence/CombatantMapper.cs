@@ -12,6 +12,7 @@ internal static class CombatantMapper
         Id = combatant.Id,
         Name = combatant.Name,
         PortraitBase64 = combatant.PortraitBase64,
+        MaxHpFormula = combatant.MaxHpFormula,
         MaxHp = combatant.MaxHp,
         CurrentHp = combatant.CurrentHp,
         TemporaryHp = combatant.TemporaryHp,
@@ -46,7 +47,8 @@ internal static class CombatantMapper
             dto.ArmorClass,
             category,
             dto.Notes,
-            dto.TemporaryHp);
+            dto.TemporaryHp,
+            dto.MaxHpFormula);
 
         foreach (var roll in dto.NamedRolls)
         {

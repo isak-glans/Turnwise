@@ -40,6 +40,9 @@ public sealed class CombatantDto
     /// <summary>Reference into an encounter file's shared, deduplicated image pool. Never set for character template files.</summary>
     public string? PortraitImageId { get; set; }
 
+    /// <summary>Optional hit-dice formula (e.g. "8d6+16") used to roll a new MaxHp. Absent on files saved before this field existed.</summary>
+    public string? MaxHpFormula { get; set; }
+
     public int MaxHp { get; set; }
     public int CurrentHp { get; set; }
 

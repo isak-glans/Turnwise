@@ -146,12 +146,28 @@ public sealed class EncounterService(DiceRollingService diceRoller)
     public DiceRollResult RollInitiative(Encounter encounter, Guid combatantId)
     {
         var combatant = GetCombatant(encounter, combatantId);
-        var result = RollFormula(combatant.InitiativeFormula, combatant.Name);
+        var result = RollFormula(combatant.InitiativeFormula, combatant.Name, "initiative");
 
         combatant.SetInitiative(result.Total);
         encounter.AddLogEntry(new CombatLogEntry(
             CombatLogEntryType.InitiativeChange,
             $"{combatant.Name} rolls initiative ({combatant.InitiativeFormula}): {result.Breakdown}",
+            combatant.Id,
+            result: result.Total.ToString()));
+
+        return result;
+    }
+
+    /// <summary>Rolls <see cref="Combatant.MaxHpFormula"/> and sets it as the new Max HP. Current HP is only reduced if it now exceeds the new Max HP - it's never raised.</summary>
+    public DiceRollResult RollMaxHp(Encounter encounter, Guid combatantId)
+    {
+        var combatant = GetCombatant(encounter, combatantId);
+        var result = RollFormula(combatant.MaxHpFormula, combatant.Name, "Max HP");
+
+        combatant.SetMaxHp(result.Total);
+        encounter.AddLogEntry(new CombatLogEntry(
+            CombatLogEntryType.HpChange,
+            $"{combatant.Name} rolls Max HP ({combatant.MaxHpFormula}): {result.Breakdown}, now {combatant.MaxHp} Max HP",
             combatant.Id,
             result: result.Total.ToString()));
 
@@ -193,11 +209,11 @@ public sealed class EncounterService(DiceRollingService diceRoller)
         return result;
     }
 
-    private DiceRollResult RollFormula(string? formulaText, string combatantName)
+    private DiceRollResult RollFormula(string? formulaText, string combatantName, string formulaKind)
     {
         if (!DiceFormula.TryParse(formulaText, out var formula))
         {
-            throw new InvalidOperationException($"{combatantName} has no valid initiative formula set.");
+            throw new InvalidOperationException($"{combatantName} has no valid {formulaKind} formula set.");
         }
 
         return diceRoller.Roll(formula!);

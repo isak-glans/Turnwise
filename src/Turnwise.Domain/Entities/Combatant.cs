@@ -44,6 +44,9 @@ public sealed class Combatant
         set => _notes = TruncateNotes(value);
     }
 
+    /// <summary>Optional hit-dice formula (e.g. "8d6+16") used to roll a new Max HP, mirroring <see cref="InitiativeFormula"/>.</summary>
+    public string? MaxHpFormula { get; set; }
+
     public int MaxHp { get; private set; }
     public int CurrentHp { get; private set; }
 
@@ -103,12 +106,14 @@ public sealed class Combatant
         int? armorClass = null,
         CombatantCategory? category = null,
         string notes = "",
-        int temporaryHp = 0)
+        int temporaryHp = 0,
+        string? maxHpFormula = null)
     {
         var combatant = new Combatant(name, maxHp, id)
         {
             PortraitBase64 = portraitBase64,
             InitiativeFormula = initiativeFormula,
+            MaxHpFormula = maxHpFormula,
             CurrentHp = Math.Clamp(currentHp, 0, maxHp),
             Category = category,
             Notes = notes
@@ -126,7 +131,7 @@ public sealed class Combatant
     /// </summary>
     public Combatant Duplicate()
     {
-        var clone = Restore(Guid.NewGuid(), Name, MaxHp, CurrentHp, PortraitBase64, InitiativeFormula, null, ArmorClass, Category, Notes, TemporaryHp);
+        var clone = Restore(Guid.NewGuid(), Name, MaxHp, CurrentHp, PortraitBase64, InitiativeFormula, null, ArmorClass, Category, Notes, TemporaryHp, MaxHpFormula);
 
         foreach (var roll in _namedRolls)
         {
@@ -154,7 +159,7 @@ public sealed class Combatant
     /// </summary>
     public Combatant Clone()
     {
-        var clone = Restore(Id, Name, MaxHp, CurrentHp, PortraitBase64, InitiativeFormula, Initiative, ArmorClass, Category, Notes, TemporaryHp);
+        var clone = Restore(Id, Name, MaxHp, CurrentHp, PortraitBase64, InitiativeFormula, Initiative, ArmorClass, Category, Notes, TemporaryHp, MaxHpFormula);
 
         foreach (var roll in _namedRolls)
         {

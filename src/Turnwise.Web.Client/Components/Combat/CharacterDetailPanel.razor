@@ -76,6 +76,9 @@
         <div class="section">
             @{ var activeTab = State.GetActiveTab(combatant.Id); }
             <div class="tab-bar">
+                <button class="tab-button @(activeTab == "details" ? "active" : "")" @onclick='() => State.SetActiveTab(combatant.Id, "details")'>
+                    <i class="bi bi-sliders"></i> Details
+                </button>
                 <button class="tab-button @(activeTab == "rolls" ? "active" : "")" @onclick='() => State.SetActiveTab(combatant.Id, "rolls")'>
                     <i class="bi bi-dice-6"></i> Dice Rolls
                 </button>
@@ -92,9 +95,6 @@
                 <button class="tab-button @(activeTab == "notes" ? "active" : "")" @onclick='() => State.SetActiveTab(combatant.Id, "notes")'>
                     <i class="bi bi-journal-text"></i> Notes
                 </button>
-                <button class="tab-button @(activeTab == "details" ? "active" : "")" @onclick='() => State.SetActiveTab(combatant.Id, "details")'>
-                    <i class="bi bi-sliders"></i> Details
-                </button>
             </div>
 
             @if (activeTab == "rolls")
@@ -104,7 +104,7 @@
                         <span></span>
                         <button class="btn btn-sm" @onclick="() => _showAddRoll = !_showAddRoll"><i class="bi bi-plus-lg"></i> Add roll</button>
                     </div>
-                    @if (combatant.NamedRolls.Count > 1)
+                    @if (combatant.NamedRolls.Count > 4)
                     {
                         <div class="filter-row">
                             <input class="filter-input" value="@State.GetRollFilter(combatant.Id)"
@@ -197,7 +197,7 @@
                         <span></span>
                         <button class="btn btn-sm" @onclick="() => _showAddCounter = !_showAddCounter"><i class="bi bi-plus-lg"></i> Add counter</button>
                     </div>
-                    @if (combatant.Counters.Count > 1)
+                    @if (combatant.Counters.Count > 4)
                     {
                         <div class="filter-row">
                             <input class="filter-input" value="@State.GetCounterFilter(combatant.Id)"
@@ -339,6 +339,10 @@
                                 <div class="stats-value">
                                     <input type="number" class="stat-big-input" value="@combatant.MaxHp" min="0"
                                            title="Max HP" @onchange="e => SetMaxHp(combatant, e)" />
+                                </div>
+                                <div class="stats-control">
+                                    <input @bind="combatant.MaxHpFormula" placeholder="e.g. 8d6+16" maxlength="@DiceFormula.MaxNotationLength" />
+                                    <button class="btn btn-sm" @onclick="() => RollMaxHp(combatant)"><i class="bi bi-dice-6-fill"></i> Roll</button>
                                 </div>
                             </div>
                         </div>
@@ -669,6 +673,20 @@
         try
         {
             EncounterService.RollInitiative(State.Current, combatant.Id);
+            _error = null;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        State.NotifyChanged();
+    }
+
+    private void RollMaxHp(Combatant combatant)
+    {
+        try
+        {
+            EncounterService.RollMaxHp(State.Current, combatant.Id);
             _error = null;
         }
         catch (Exception ex)

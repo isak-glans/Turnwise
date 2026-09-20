@@ -16,25 +16,12 @@
         </div>
     </div>
 
-    @if (State.Current.Combatants.Count > 0)
+    @if (State.Current.Combatants.Count > 0 && State.SelectModeOn)
     {
         <div class="combatant-list-header">
-            <span></span>
-            @if (State.SelectModeOn)
-            {
-                <input type="checkbox" class="bulk-select-checkbox" title="Select all"
-                       checked="@AllSelected" @onchange="ToggleSelectAll" />
-            }
-            else
-            {
-                <span></span>
-            }
-            <span></span>
-            <span></span>
-            <span></span>
-            <span class="col-label">Init</span>
-            <span></span>
-            <span class="col-label">HP</span>
+            <input type="checkbox" class="bulk-select-checkbox" title="Select all"
+                   checked="@AllSelected" @onchange="ToggleSelectAll" />
+            <span>Select all</span>
         </div>
     }
 
@@ -102,13 +89,14 @@
                 </div>
                 <div class="combatant-row-bottom">
                     <span class="combatant-init" title="Initiative">
-                        <i class="bi bi-dice-5-fill"></i>
+                        <span class="col-heading">Init</span>
                         <span class="value">@(combatant.Initiative?.ToString() ?? "—")</span>
                     </span>
                     @if (combatant.ArmorClass.HasValue)
                     {
                         <span class="combatant-ac" title="Armor Class">
-                            <i class="bi bi-shield-fill"></i>@combatant.ArmorClass
+                            <span class="col-heading">AC</span>
+                            <span class="value">@combatant.ArmorClass</span>
                         </span>
                     }
                     else
@@ -116,15 +104,16 @@
                         <span></span>
                     }
                     <span class="combatant-hp" title="@($"{combatant.CurrentHp} / {combatant.MaxHp} HP")">
-                        <span class="hp-bar">
-                            <span class="hp-bar-fill @HpFillClass(combatant)" style="width:@(HpPercent(combatant))%"></span>
-                        </span>
+                        <span class="col-heading">HP</span>
                         <span class="hp-text">
                             @combatant.CurrentHp / @combatant.MaxHp@(" ")
                             @if (combatant.TemporaryHp > 0)
                             {
                                 <span class="hp-temp-text">+@combatant.TemporaryHp</span>
                             }
+                        </span>
+                        <span class="hp-bar">
+                            <span class="hp-bar-fill @HpFillClass(combatant)" style="width:@(HpPercent(combatant))%"></span>
                         </span>
                     </span>
                 </div>
