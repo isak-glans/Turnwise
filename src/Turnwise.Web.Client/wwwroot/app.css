@@ -223,6 +223,30 @@ button:hover {
     color: #fff;
 }
 
+.btn-damage {
+    background: var(--tw-danger-soft);
+    border-color: var(--tw-danger);
+    color: var(--tw-danger);
+}
+
+.btn-damage:hover {
+    background: var(--tw-danger);
+    border-color: var(--tw-danger);
+    color: #fff;
+}
+
+.btn-heal {
+    background: var(--tw-success-soft);
+    border-color: var(--tw-success);
+    color: var(--tw-success);
+}
+
+.btn-heal:hover {
+    background: var(--tw-success);
+    border-color: var(--tw-success);
+    color: #fff;
+}
+
 .btn-block {
     width: 100%;
     justify-content: center;
@@ -538,11 +562,17 @@ button:hover {
 
 .bulk-panel-actions {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 0.5rem;
 }
 
+.bulk-panel-actions > .condition-picker {
+    flex: 1 1 100%;
+    margin-top: 0;
+}
+
 .bulk-action-group {
+    flex: 1 1 24rem;
     display: flex;
     align-items: center;
     gap: 0.4rem;
@@ -559,11 +589,6 @@ button:hover {
     font-weight: 600;
     font-size: 0.85rem;
     min-width: 6.5rem;
-}
-
-.bulk-action-sep {
-    color: var(--tw-text-faint);
-    font-size: 0.8rem;
 }
 
 .bulk-narrow-input {
@@ -716,6 +741,17 @@ button:hover {
 
     .combatant-row-bottom {
         padding-left: 2.5rem;
+    }
+
+    /* Without this the HP block keeps its 6rem minimum and the rest of the row stays empty. */
+    .combatant-row-bottom .combatant-hp {
+        flex: 1;
+        min-width: 0;
+        margin-left: 0;
+    }
+
+    .combatant-row-top .combatant-main {
+        flex: 1;
     }
 }
 
@@ -1111,13 +1147,6 @@ button:hover {
     min-width: 5rem;
 }
 
-.section {
-    border: 1px solid var(--tw-panel-border);
-    border-radius: var(--tw-radius-md);
-    padding: 0.85rem;
-    margin-bottom: 0.75rem;
-}
-
 .section-header {
     display: flex;
     align-items: center;
@@ -1125,39 +1154,60 @@ button:hover {
     margin-bottom: 0.6rem;
 }
 
-.tab-bar {
+/* The character panel's collapsible sections. Any number can be open at once. No
+   overflow:hidden on .accordion-section - the row dropdown menus must be free to spill out. */
+.accordion {
     display: flex;
-    gap: 0.2rem;
-    border-bottom: 1px solid var(--tw-panel-border);
-    margin: -0.85rem -0.85rem 0.75rem;
-    padding: 0 0.5rem;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 0.75rem;
 }
 
-.tab-button {
+.accordion-section {
+    border: 1px solid var(--tw-panel-border);
+    border-radius: var(--tw-radius-md);
+}
+
+.accordion-header {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.6rem;
+    width: 100%;
     background: transparent;
     border: none;
-    border-bottom: 2px solid transparent;
-    border-radius: 0;
-    padding: 0.6rem 0.7rem;
-    color: var(--tw-text-dim);
+    border-radius: var(--tw-radius-md);
+    padding: 0.75rem 0.85rem;
+    color: var(--tw-text);
     font-weight: 600;
-    font-size: 0.88rem;
+    font-size: 0.92rem;
+    text-align: left;
 }
 
-.tab-button:hover {
-    color: var(--tw-accent);
+.accordion-header:hover {
+    background: var(--tw-inset-bg);
     border-color: transparent;
+    color: var(--tw-text);
 }
 
-.tab-button.active {
-    color: var(--tw-accent);
-    border-bottom-color: var(--tw-accent);
+.accordion-header[aria-expanded="true"] {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom: 1px solid var(--tw-panel-border);
 }
 
-.tab-count {
+.accordion-title {
+    flex: 1;
+}
+
+.accordion-chevron {
+    color: var(--tw-text-faint);
+}
+
+.accordion-body {
+    padding: 0.85rem;
+}
+
+.accordion-count {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1165,22 +1215,17 @@ button:hover {
     height: 1.1rem;
     padding: 0 0.3rem;
     border-radius: 999px;
-    background: var(--tw-inset-bg);
-    color: var(--tw-text-dim);
+    background: var(--tw-accent);
+    color: #fff;
     font-size: 0.65rem;
     font-weight: 700;
 }
 
-.tab-button.active .tab-count {
-    background: var(--tw-accent);
-    color: #fff;
-}
-
-.tab-content .section-header {
+.accordion-body .section-header {
     margin-bottom: 0.5rem;
 }
 
-.section ul {
+.accordion ul {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -1224,17 +1269,6 @@ button:hover {
 .inline-edit-input.narrow {
     flex: none;
     width: 4.5rem;
-}
-
-.drag-handle {
-    cursor: grab;
-    color: var(--tw-text-faint);
-    display: inline-flex;
-    align-items: center;
-}
-
-.drag-handle:active {
-    cursor: grabbing;
 }
 
 .subsection-heading {
@@ -1364,15 +1398,77 @@ button:hover {
     border-radius: 999px;
 }
 
+.counter-stepper {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
 .add-inline-form {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.4rem;
     margin-top: 0.6rem;
 }
 
-.add-inline-form input {
-    flex: 1;
+.add-inline-form input,
+.add-inline-form select {
+    flex: 1 1 6rem;
     min-width: 0;
+}
+
+.add-inline-form .btn {
+    flex: 0 0 auto;
+}
+
+/* Amount + Damage + Heal need more room than the default stats-control minimum. */
+.hp-amount-control {
+    flex: 1 1 16rem;
+    min-width: 16rem;
+}
+
+/* Phone layouts: rolls/counters reflow to a name row plus an actions row, and the inline
+   add/edit forms give the name field its own line, instead of squeezing everything into one. */
+@media (max-width: 600px) {
+    .roll-row:not(.editing),
+    .counter-row:not(.editing) {
+        display: grid;
+        grid-template-columns: auto auto minmax(0, 1fr) auto;
+        align-items: center;
+        column-gap: 0.5rem;
+        row-gap: 0.4rem;
+    }
+
+    .roll-row > .reorder-buttons,
+    .counter-row > .reorder-buttons { grid-column: 1; grid-row: 1; }
+
+    .roll-row > .stat-icon,
+    .counter-row > .stat-icon { grid-column: 2; grid-row: 1; }
+
+    .roll-row > .roll-info,
+    .counter-row > .counter-name { grid-column: 3; grid-row: 1; }
+
+    .roll-row > .menu-wrap,
+    .counter-row > .menu-wrap { grid-column: 4; grid-row: 1; }
+
+    .roll-row > .formula-box { grid-column: 3; grid-row: 2; justify-self: start; }
+    .roll-row > .roll-action { grid-column: 4; grid-row: 2; }
+    .counter-row > .counter-stepper { grid-column: 3 / span 2; grid-row: 2; justify-self: start; }
+
+    .roll-row.editing,
+    .counter-row.editing {
+        flex-wrap: wrap;
+    }
+
+    .roll-row.editing .inline-edit-input,
+    .counter-row.editing .inline-edit-input {
+        flex: 1 1 7rem;
+        width: auto;
+    }
+
+    .add-inline-form > :first-child {
+        flex-basis: 100%;
+    }
 }
 
 /* Character info panel */

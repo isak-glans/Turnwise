@@ -11,10 +11,14 @@
 
         <div class="bulk-panel-actions">
             <div class="bulk-action-group">
-                <span class="bulk-action-label"><i class="bi bi-heart-fill"></i> Damage</span>
-                <input class="bulk-narrow-input" @bind="_flatDelta" placeholder="e.g. -10 or +5" />
-                <button class="btn btn-sm" @onclick="ApplyFlat">Apply</button>
-                <span class="bulk-action-sep">or</span>
+                <span class="bulk-action-label"><i class="bi bi-heart-fill"></i> HP</span>
+                <input class="bulk-narrow-input" @bind="_flatDelta" @bind:event="oninput" type="text" inputmode="numeric" autocomplete="off" placeholder="Amount" />
+                <button class="btn btn-sm btn-damage" @onclick="() => ApplyFlat(heal: false)"><i class="bi bi-heartbreak-fill"></i> Damage</button>
+                <button class="btn btn-sm btn-heal" @onclick="() => ApplyFlat(heal: true)"><i class="bi bi-heart-pulse-fill"></i> Heal</button>
+            </div>
+
+            <div class="bulk-action-group">
+                <span class="bulk-action-label"><i class="bi bi-dice-6-fill"></i> Damage roll</span>
                 <input class="bulk-narrow-input" @bind="_damageFormula" placeholder="2d6" maxlength="@DiceFormula.MaxNotationLength" />
                 <button class="btn btn-sm" title="One roll, same damage to everyone" @onclick="() => RollDamage(sharedRoll: true)">
                     <i class="bi bi-dice-6-fill"></i> Roll (shared)
@@ -79,18 +83,18 @@
     private bool _showConditionPicker;
     private string? _error;
 
-    private void ApplyFlat()
+    private void ApplyFlat(bool heal)
     {
-        if (int.TryParse(_flatDelta.Trim(), out var delta))
+        if (HpAmount.TryParse(_flatDelta, out var amount))
         {
             State.CaptureUndoSnapshot();
-            EncounterService.ApplyHpDeltaToMany(State.Current, State.BulkSelectedIds, delta);
+            EncounterService.ApplyHpDeltaToMany(State.Current, State.BulkSelectedIds, heal ? amount : -amount);
             _flatDelta = "";
             _error = null;
         }
         else
         {
-            _error = $"'{_flatDelta}' is not a valid HP delta (e.g. -10 or +5).";
+            _error = $"'{_flatDelta}' is not a valid amount - enter a positive whole number.";
         }
         State.NotifyChanged();
     }
