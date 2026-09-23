@@ -1523,11 +1523,88 @@ button:hover {
     margin-top: 1rem;
 }
 
-.notes-textarea {
+.notes-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.3rem;
+    border: 1px solid var(--tw-panel-border);
+    border-bottom: none;
+    border-radius: var(--tw-radius-sm) var(--tw-radius-sm) 0 0;
+    background: var(--tw-inset-bg);
+}
+
+.notes-toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    padding: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--tw-radius-sm);
+    color: var(--tw-text-dim);
+}
+
+.notes-toolbar-btn:hover {
+    background: var(--tw-panel-bg);
+    border-color: var(--tw-panel-border);
+    color: var(--tw-text);
+}
+
+.notes-toolbar-btn.active {
+    background: var(--tw-accent-soft);
+    border-color: var(--tw-accent);
+    color: var(--tw-accent);
+}
+
+.notes-toolbar-sep {
+    width: 1px;
+    height: 1.3rem;
+    background: var(--tw-panel-border);
+    margin: 0 0.25rem;
+}
+
+.notes-editor {
     width: 100%;
     box-sizing: border-box;
-    resize: vertical;
     min-height: 8rem;
+    max-height: 24rem;
+    overflow-y: auto;
+    padding: 0.6rem 0.7rem;
+    border: 1px solid var(--tw-panel-border);
+    border-radius: 0 0 var(--tw-radius-sm) var(--tw-radius-sm);
+    background: #fff;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    /* Preserves plain-text notes saved before this editor existed - they're raw "\n"
+       text with no markup, so without this their line breaks would collapse. */
+    white-space: pre-wrap;
+}
+
+.notes-editor:focus {
+    outline: none;
+    border-color: var(--tw-accent);
+}
+
+.notes-editor:empty::before {
+    content: attr(data-placeholder);
+    color: var(--tw-text-faint);
+}
+
+/* Overrides the ".accordion ul" reset above (list-style/display/flex), which is meant for
+   the roll/counter lists and otherwise leaks into any <ul>/<ol> the notes editor creates. */
+.notes-editor ul, .notes-editor ol {
+    display: block;
+    list-style: revert;
+    margin: 0.3rem 0;
+    padding-left: 1.4rem;
+    gap: 0;
+}
+
+.notes-editor li {
+    display: list-item;
 }
 
 /* Combat log */

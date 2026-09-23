@@ -444,9 +444,16 @@
                 @if (notesOpen)
                 {
                 <div class="accordion-body">
-                    <textarea class="notes-textarea" value="@combatant.Notes" maxlength="@Combatant.MaxNotesLength"
-                              placeholder="Personality, tactics, secrets - whatever's worth remembering about this character."
-                              @oninput="e => SetNotes(combatant, e)"></textarea>
+                    <div class="notes-toolbar" @ref="_notesToolbarRef">
+                        <button type="button" class="notes-toolbar-btn" data-command="bold" title="Bold"><i class="bi bi-type-bold"></i></button>
+                        <button type="button" class="notes-toolbar-btn" data-command="italic" title="Italic"><i class="bi bi-type-italic"></i></button>
+                        <button type="button" class="notes-toolbar-btn" data-command="underline" title="Underline"><i class="bi bi-type-underline"></i></button>
+                        <span class="notes-toolbar-sep"></span>
+                        <button type="button" class="notes-toolbar-btn" data-command="insertUnorderedList" title="Bullet list"><i class="bi bi-list-ul"></i></button>
+                        <button type="button" class="notes-toolbar-btn" data-command="insertOrderedList" title="Numbered list"><i class="bi bi-list-ol"></i></button>
+                    </div>
+                    <div class="notes-editor" contenteditable="true" @ref="_notesEditorRef" @oninput="OnNotesInput"
+                         data-placeholder="Personality, tactics, secrets - whatever's worth remembering about this character."></div>
                 </div>
                 }
             </div>
@@ -486,6 +493,12 @@
     private IJSObjectReference? _outsideClickHandle;
     private string? _outsideClickHandleTriggerId;
     private DotNetObjectReference<CharacterDetailPanel>? _dotNetRef;
+
+    private ElementReference _notesEditorRef;
+    private ElementReference _notesToolbarRef;
+    private IJSObjectReference? _notesModule;
+    private IJSObjectReference? _notesEditorHandle;
+    private string? _notesEditorElementId;
 
     private static bool HasPortrait(Combatant c) => !string.IsNullOrEmpty(c.PortraitBase64);
 
@@ -552,6 +565,61 @@
         {
             // circuit is going away - nothing to position or register
         }
+
+        try
+        {
+            await InitNotesEditorIfNeededAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // circuit is going away - nothing to initialize
+        }
+    }
+
+    /// <summary>
+    /// (Re)wires up the notes editor whenever its underlying DOM element is new - the very
+    /// first render, or after the Notes accordion section was collapsed and reopened (which
+    /// destroys and recreates the contenteditable div). Skipped on every other render so an
+    /// unrelated state change elsewhere on the page (e.g. applying damage) doesn't stomp on
+    /// whatever the GM is mid-typing.
+    /// </summary>
+    private async Task InitNotesEditorIfNeededAsync()
+    {
+        if (State.SelectedCombatant is not { } combatant || !State.IsSectionOpen(combatant.Id, "notes"))
+        {
+            return;
+        }
+
+        var elementId = _notesEditorRef.Id;
+        if (string.IsNullOrEmpty(elementId) || elementId == _notesEditorElementId)
+        {
+            return;
+        }
+
+        _notesEditorElementId = elementId;
+        _notesModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/notesEditor.js");
+
+        if (_notesEditorHandle is not null)
+        {
+            var previous = _notesEditorHandle;
+            _notesEditorHandle = null;
+            await previous.InvokeVoidAsync("dispose");
+            await previous.DisposeAsync();
+        }
+
+        await _notesModule.InvokeVoidAsync("sanitizeAndSetHtml", _notesEditorRef, combatant.Notes);
+        _notesEditorHandle = await _notesModule.InvokeAsync<IJSObjectReference>("init", _notesEditorRef, _notesToolbarRef);
+    }
+
+    private async Task OnNotesInput()
+    {
+        if (_notesModule is null || State.SelectedCombatant is not { } combatant)
+        {
+            return;
+        }
+
+        combatant.Notes = await _notesModule.InvokeAsync<string>("getHtml", _notesEditorRef);
+        State.NotifyChanged();
     }
 
     private async Task DisposeOutsideClickHandleAsync()
@@ -591,6 +659,24 @@
             }
         }
 
+        try
+        {
+            if (_notesEditorHandle is not null)
+            {
+                await _notesEditorHandle.InvokeVoidAsync("dispose");
+                await _notesEditorHandle.DisposeAsync();
+            }
+
+            if (_notesModule is not null)
+            {
+                await _notesModule.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // circuit already gone
+        }
+
         _dotNetRef?.Dispose();
     }
 
@@ -615,12 +701,6 @@
         {
             _error = $"Failed to load image: {ex.Message}";
         }
-        State.NotifyChanged();
-    }
-
-    private void SetNotes(Combatant combatant, ChangeEventArgs e)
-    {
-        combatant.Notes = e.Value?.ToString() ?? "";
         State.NotifyChanged();
     }
 

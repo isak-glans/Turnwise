@@ -13,8 +13,12 @@ public sealed class Combatant
     /// <summary>Keeps the name usable as part of a save-file name - well under filesystem path-component limits.</summary>
     public const int MaxNameLength = 100;
 
-    /// <summary>Generous but bounded, so a GM's free-form notes can't blow up an encounter file.</summary>
-    public const int MaxNotesLength = 4000;
+    /// <summary>
+    /// Generous but bounded, so a GM's free-form notes can't blow up an encounter file. Notes
+    /// now stores sanitized HTML from the rich-text editor rather than plain text, hence the
+    /// higher cap than a character count alone would need - markup eats into the budget too.
+    /// </summary>
+    public const int MaxNotesLength = 8000;
 
     private readonly List<NamedRoll> _namedRolls = [];
     private readonly List<Counter> _counters = [];
