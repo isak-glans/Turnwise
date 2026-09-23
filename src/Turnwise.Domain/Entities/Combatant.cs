@@ -15,10 +15,10 @@ public sealed class Combatant
 
     /// <summary>
     /// Generous but bounded, so a GM's free-form notes can't blow up an encounter file. Notes
-    /// now stores sanitized HTML from the rich-text editor rather than plain text, hence the
-    /// higher cap than a character count alone would need - markup eats into the budget too.
+    /// stores Markdown source (rendered read-only by the Application layer), so the small amount
+    /// of syntax overhead ("**", "- ", "[](...)") barely eats into the budget.
     /// </summary>
-    public const int MaxNotesLength = 8000;
+    public const int MaxNotesLength = 6000;
 
     private readonly List<NamedRoll> _namedRolls = [];
     private readonly List<Counter> _counters = [];

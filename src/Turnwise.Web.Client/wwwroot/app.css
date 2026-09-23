@@ -1553,12 +1553,6 @@ button:hover {
     color: var(--tw-text);
 }
 
-.notes-toolbar-btn.active {
-    background: var(--tw-accent-soft);
-    border-color: var(--tw-accent);
-    color: var(--tw-accent);
-}
-
 .notes-toolbar-sep {
     width: 1px;
     height: 1.3rem;
@@ -1566,44 +1560,60 @@ button:hover {
     margin: 0 0.25rem;
 }
 
-.notes-editor {
+.notes-textarea {
     width: 100%;
     box-sizing: border-box;
     min-height: 8rem;
     max-height: 24rem;
-    overflow-y: auto;
+    resize: vertical;
     padding: 0.6rem 0.7rem;
     border: 1px solid var(--tw-panel-border);
     border-radius: 0 0 var(--tw-radius-sm) var(--tw-radius-sm);
-    background: #fff;
     font-size: 0.9rem;
     line-height: 1.5;
-    /* Preserves plain-text notes saved before this editor existed - they're raw "\n"
-       text with no markup, so without this their line breaks would collapse. */
-    white-space: pre-wrap;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-.notes-editor:focus {
-    outline: none;
-    border-color: var(--tw-accent);
+.notes-view {
+    padding: 0.2rem 0.1rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--tw-text);
 }
 
-.notes-editor:empty::before {
-    content: attr(data-placeholder);
-    color: var(--tw-text-faint);
+.notes-view p {
+    margin: 0 0 0.6rem;
+}
+
+.notes-view p:last-child {
+    margin-bottom: 0;
+}
+
+.notes-view h1, .notes-view h2, .notes-view h3 {
+    margin: 0.8rem 0 0.4rem;
+    line-height: 1.3;
+}
+
+.notes-view h1:first-child, .notes-view h2:first-child, .notes-view h3:first-child {
+    margin-top: 0;
+}
+
+.notes-view a {
+    color: var(--tw-accent);
+    text-decoration: underline;
 }
 
 /* Overrides the ".accordion ul" reset above (list-style/display/flex), which is meant for
-   the roll/counter lists and otherwise leaks into any <ul>/<ol> the notes editor creates. */
-.notes-editor ul, .notes-editor ol {
+   the roll/counter lists and otherwise leaks into any <ul>/<ol> under .accordion. */
+.notes-view ul, .notes-view ol {
     display: block;
     list-style: revert;
-    margin: 0.3rem 0;
+    margin: 0 0 0.6rem;
     padding-left: 1.4rem;
     gap: 0;
 }
 
-.notes-editor li {
+.notes-view li {
     display: list-item;
 }
 

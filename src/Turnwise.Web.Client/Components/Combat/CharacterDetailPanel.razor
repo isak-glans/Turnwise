@@ -444,16 +444,36 @@
                 @if (notesOpen)
                 {
                 <div class="accordion-body">
-                    <div class="notes-toolbar" @ref="_notesToolbarRef">
-                        <button type="button" class="notes-toolbar-btn" data-command="bold" title="Bold"><i class="bi bi-type-bold"></i></button>
-                        <button type="button" class="notes-toolbar-btn" data-command="italic" title="Italic"><i class="bi bi-type-italic"></i></button>
-                        <button type="button" class="notes-toolbar-btn" data-command="underline" title="Underline"><i class="bi bi-type-underline"></i></button>
-                        <span class="notes-toolbar-sep"></span>
-                        <button type="button" class="notes-toolbar-btn" data-command="insertUnorderedList" title="Bullet list"><i class="bi bi-list-ul"></i></button>
-                        <button type="button" class="notes-toolbar-btn" data-command="insertOrderedList" title="Numbered list"><i class="bi bi-list-ol"></i></button>
+                    <div class="section-header">
+                        <span></span>
+                        <button class="btn btn-sm" @onclick="() => _editingNotes = !_editingNotes">
+                            <i class="bi @(_editingNotes ? "bi-check-lg" : "bi-pencil")"></i> @(_editingNotes ? "Done" : "Edit")
+                        </button>
                     </div>
-                    <div class="notes-editor" contenteditable="true" @ref="_notesEditorRef" @oninput="OnNotesInput"
-                         data-placeholder="Personality, tactics, secrets - whatever's worth remembering about this character."></div>
+                    @if (_editingNotes)
+                    {
+                        <div class="notes-toolbar">
+                            <button type="button" class="notes-toolbar-btn" title="Bold" @onclick='() => WrapNotesSelection("**", "**")'><i class="bi bi-type-bold"></i></button>
+                            <button type="button" class="notes-toolbar-btn" title="Italic" @onclick='() => WrapNotesSelection("*", "*")'><i class="bi bi-type-italic"></i></button>
+                            <span class="notes-toolbar-sep"></span>
+                            <button type="button" class="notes-toolbar-btn" title="Bullet list" @onclick='() => PrefixNotesLine("- ")'><i class="bi bi-list-ul"></i></button>
+                            <button type="button" class="notes-toolbar-btn" title="Numbered list" @onclick='() => PrefixNotesLine("1. ")'><i class="bi bi-list-ol"></i></button>
+                            <button type="button" class="notes-toolbar-btn" title="Heading" @onclick='() => PrefixNotesLine("## ")'><i class="bi bi-type-h2"></i></button>
+                            <span class="notes-toolbar-sep"></span>
+                            <button type="button" class="notes-toolbar-btn" title="Link" @onclick="InsertNotesLink"><i class="bi bi-link-45deg"></i></button>
+                        </div>
+                        <textarea class="notes-textarea" @ref="_notesTextareaRef" value="@combatant.Notes" maxlength="@Combatant.MaxNotesLength"
+                                  placeholder="Personality, tactics, secrets - whatever's worth remembering about this character.&#10;&#10;Markdown: **bold**, *italic*, - list, 1. list, ## heading, [link](https://...)"
+                                  @oninput="e => SetNotes(combatant, e)"></textarea>
+                    }
+                    else if (string.IsNullOrWhiteSpace(combatant.Notes))
+                    {
+                        <p class="empty-hint">No notes yet.</p>
+                    }
+                    else
+                    {
+                        <div class="notes-view">@((MarkupString)NotesMarkdown.ToHtml(combatant.Notes))</div>
+                    }
                 </div>
                 }
             </div>
@@ -494,11 +514,9 @@
     private string? _outsideClickHandleTriggerId;
     private DotNetObjectReference<CharacterDetailPanel>? _dotNetRef;
 
-    private ElementReference _notesEditorRef;
-    private ElementReference _notesToolbarRef;
-    private IJSObjectReference? _notesModule;
-    private IJSObjectReference? _notesEditorHandle;
-    private string? _notesEditorElementId;
+    private bool _editingNotes;
+    private ElementReference _notesTextareaRef;
+    private IJSObjectReference? _notesToolbarModule;
 
     private static bool HasPortrait(Combatant c) => !string.IsNullOrEmpty(c.PortraitBase64);
 
@@ -565,61 +583,33 @@
         {
             // circuit is going away - nothing to position or register
         }
-
-        try
-        {
-            await InitNotesEditorIfNeededAsync();
-        }
-        catch (JSDisconnectedException)
-        {
-            // circuit is going away - nothing to initialize
-        }
     }
 
-    /// <summary>
-    /// (Re)wires up the notes editor whenever its underlying DOM element is new - the very
-    /// first render, or after the Notes accordion section was collapsed and reopened (which
-    /// destroys and recreates the contenteditable div). Skipped on every other render so an
-    /// unrelated state change elsewhere on the page (e.g. applying damage) doesn't stomp on
-    /// whatever the GM is mid-typing.
-    /// </summary>
-    private async Task InitNotesEditorIfNeededAsync()
+    private void SetNotes(Combatant combatant, ChangeEventArgs e)
     {
-        if (State.SelectedCombatant is not { } combatant || !State.IsSectionOpen(combatant.Id, "notes"))
-        {
-            return;
-        }
-
-        var elementId = _notesEditorRef.Id;
-        if (string.IsNullOrEmpty(elementId) || elementId == _notesEditorElementId)
-        {
-            return;
-        }
-
-        _notesEditorElementId = elementId;
-        _notesModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/notesEditor.js");
-
-        if (_notesEditorHandle is not null)
-        {
-            var previous = _notesEditorHandle;
-            _notesEditorHandle = null;
-            await previous.InvokeVoidAsync("dispose");
-            await previous.DisposeAsync();
-        }
-
-        await _notesModule.InvokeVoidAsync("sanitizeAndSetHtml", _notesEditorRef, combatant.Notes);
-        _notesEditorHandle = await _notesModule.InvokeAsync<IJSObjectReference>("init", _notesEditorRef, _notesToolbarRef);
-    }
-
-    private async Task OnNotesInput()
-    {
-        if (_notesModule is null || State.SelectedCombatant is not { } combatant)
-        {
-            return;
-        }
-
-        combatant.Notes = await _notesModule.InvokeAsync<string>("getHtml", _notesEditorRef);
+        combatant.Notes = e.Value?.ToString() ?? "";
         State.NotifyChanged();
+    }
+
+    private async Task<IJSObjectReference> GetNotesToolbarModuleAsync() =>
+        _notesToolbarModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/notesToolbar.js");
+
+    private async Task WrapNotesSelection(string before, string after)
+    {
+        var module = await GetNotesToolbarModuleAsync();
+        await module.InvokeVoidAsync("wrapSelection", _notesTextareaRef, before, after);
+    }
+
+    private async Task PrefixNotesLine(string prefix)
+    {
+        var module = await GetNotesToolbarModuleAsync();
+        await module.InvokeVoidAsync("prefixLine", _notesTextareaRef, prefix);
+    }
+
+    private async Task InsertNotesLink()
+    {
+        var module = await GetNotesToolbarModuleAsync();
+        await module.InvokeVoidAsync("insertLink", _notesTextareaRef);
     }
 
     private async Task DisposeOutsideClickHandleAsync()
@@ -659,22 +649,16 @@
             }
         }
 
-        try
+        if (_notesToolbarModule is not null)
         {
-            if (_notesEditorHandle is not null)
+            try
             {
-                await _notesEditorHandle.InvokeVoidAsync("dispose");
-                await _notesEditorHandle.DisposeAsync();
+                await _notesToolbarModule.DisposeAsync();
             }
-
-            if (_notesModule is not null)
+            catch (JSDisconnectedException)
             {
-                await _notesModule.DisposeAsync();
+                // circuit already gone
             }
-        }
-        catch (JSDisconnectedException)
-        {
-            // circuit already gone
         }
 
         _dotNetRef?.Dispose();
