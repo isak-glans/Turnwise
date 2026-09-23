@@ -2,21 +2,17 @@
 
 <div class="panel card log-panel">
     <div class="log-toggle">
-        <i class="bi bi-file-text"></i>
-        Combat Log (@State.Current.Log.Count)
+        <span class="log-toggle-label"><i class="bi bi-file-text"></i> Combat Log (@State.Current.Log.Count)</span>
+        @if (State.Current.Log.Count > 1)
+        {
+            <select class="log-filter-select" title="Filter" @onchange="OnFilterChanged">
+                @foreach (var option in FilterOptions)
+                {
+                    <option value="@(option.Type?.ToString() ?? "")" selected="@(_filterType == option.Type)">@option.Label</option>
+                }
+            </select>
+        }
     </div>
-
-    @if (State.Current.Log.Count > 1)
-    {
-        <div class="log-filter-row">
-            @foreach (var option in FilterOptions)
-            {
-                <button class="log-filter-chip @(_filterType == option.Type ? "active" : "")" @onclick="() => _filterType = option.Type">
-                    <i class="bi @(IconFor(option.Type))"></i> @option.Label
-                </button>
-            }
-        </div>
-    }
 
     <ul class="log-list">
         @foreach (var entry in FilteredLog())
@@ -43,6 +39,9 @@
 
 @code {
     private CombatLogEntryType? _filterType;
+
+    private void OnFilterChanged(ChangeEventArgs e) =>
+        _filterType = Enum.TryParse<CombatLogEntryType>(e.Value?.ToString(), out var type) ? type : null;
 
     private static readonly (CombatLogEntryType? Type, string Label)[] FilterOptions =
     [

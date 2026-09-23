@@ -1627,36 +1627,23 @@ button:hover {
     width: 100%;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.5rem;
     text-align: left;
     font-weight: 600;
     padding: 0.3rem 0;
 }
 
-.log-filter-row {
+.log-toggle-label {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    margin: 0.4rem 0 0.6rem;
-}
-
-.log-filter-chip {
-    display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
-    background: var(--tw-inset-bg);
-    border: 1px solid var(--tw-panel-border);
-    border-radius: 999px;
-    padding: 0.25rem 0.6rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--tw-text-dim);
+    gap: 0.5rem;
 }
 
-.log-filter-chip.active {
-    background: var(--tw-accent);
-    border-color: var(--tw-accent);
-    color: #fff;
+.log-filter-select {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.3rem 0.5rem;
 }
 
 .log-list {
