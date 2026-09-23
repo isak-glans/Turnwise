@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Turnwise.Infrastructure.Persistence.Dtos;
 
 public sealed class CombatLogEntryDto
@@ -16,6 +18,10 @@ public sealed class CombatLogEntryDto
 /// <summary>Root object for a saved encounter (*.turnwise-encounter.json): round, turn order and every combatant's full sheet.</summary>
 public sealed class EncounterFileDto
 {
+    /// <summary>Format documentation for a human or AI reading the file - see <see cref="FileReadme"/>. Never read back on load.</summary>
+    [JsonPropertyName("_readme")]
+    public string Readme { get; set; } = FileReadme.ForEncounterFile;
+
     public int SchemaVersion { get; set; }
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;

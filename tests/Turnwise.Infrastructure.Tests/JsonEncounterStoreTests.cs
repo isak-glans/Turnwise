@@ -80,4 +80,33 @@ public class JsonEncounterStoreTests
 
         await Assert.ThrowsAsync<UnsupportedSchemaVersionException>(() => store.LoadAsync(stream));
     }
+
+    [Fact]
+    public async Task SaveAsync_WritesAReadmeFieldDocumentingTheFormat()
+    {
+        var store = new JsonEncounterStore();
+        var encounter = new Encounter("Goblin Ambush");
+
+        await using var stream = new MemoryStream();
+        await store.SaveAsync(encounter, stream);
+        stream.Position = 0;
+        using var doc = await System.Text.Json.JsonDocument.ParseAsync(stream);
+
+        Assert.True(doc.RootElement.TryGetProperty("_readme", out var readme));
+        var text = readme.GetString();
+        Assert.NotNull(text);
+        Assert.Contains("dice notation", text);
+    }
+
+    [Fact]
+    public async Task LoadAsync_MalformedJson_ThrowsFormatExceptionWithLocationInfo()
+    {
+        var json = """{"SchemaVersion": 9, "Name": "Broken""";
+        var store = new JsonEncounterStore();
+        await using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
+
+        var ex = await Assert.ThrowsAsync<FormatException>(() => store.LoadAsync(stream));
+
+        Assert.Contains("Encounter file isn't valid JSON", ex.Message);
+    }
 }

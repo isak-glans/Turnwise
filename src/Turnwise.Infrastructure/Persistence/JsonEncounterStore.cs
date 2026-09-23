@@ -16,8 +16,7 @@ public sealed class JsonEncounterStore : IEncounterStore
 
     public async Task<Encounter> LoadAsync(Stream stream, CancellationToken cancellationToken = default)
     {
-        var fileDto = await JsonSerializer.DeserializeAsync<EncounterFileDto>(stream, SerializerOptions, cancellationToken)
-            ?? throw new FormatException("Encounter file is empty or invalid.");
+        var fileDto = await JsonFileReader.DeserializeAsync<EncounterFileDto>(stream, SerializerOptions, "Encounter", cancellationToken);
 
         if (fileDto.SchemaVersion < SchemaVersions.MinSupportedEncounterSchemaVersion)
         {

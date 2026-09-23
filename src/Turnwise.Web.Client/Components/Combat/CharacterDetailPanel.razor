@@ -74,24 +74,34 @@
             </div>
         </div>
 
-        <div class="accordion">
-            @{
-                var detailsOpen = State.IsSectionOpen(combatant.Id, "details");
-                var rollsOpen = State.IsSectionOpen(combatant.Id, "rolls");
-                var countersOpen = State.IsSectionOpen(combatant.Id, "counters");
-                var conditionsOpen = State.IsSectionOpen(combatant.Id, "conditions");
-                var notesOpen = State.IsSectionOpen(combatant.Id, "notes");
-            }
-
-            <div class="accordion-section">
-                <button class="accordion-header" aria-expanded="@detailsOpen" @onclick='() => State.ToggleSection(combatant.Id, "details")'>
+        <div class="section">
+            @{ var activeTab = State.GetActiveTab(combatant.Id); }
+            <div class="tab-bar">
+                <button class="tab-button @(activeTab == "details" ? "active" : "")" title="Details" @onclick='() => State.SetActiveTab(combatant.Id, "details")'>
                     <i class="bi bi-sliders"></i>
-                    <span class="accordion-title">Details</span>
-                    <i class="bi @(detailsOpen ? "bi-chevron-up" : "bi-chevron-down") accordion-chevron"></i>
                 </button>
-                @if (detailsOpen)
-                {
-                <div class="accordion-body">
+                <button class="tab-button @(activeTab == "rolls" ? "active" : "")" title="Dice Rolls" @onclick='() => State.SetActiveTab(combatant.Id, "rolls")'>
+                    <i class="bi bi-dice-6"></i>
+                </button>
+                <button class="tab-button @(activeTab == "counters" ? "active" : "")" title="Counters" @onclick='() => State.SetActiveTab(combatant.Id, "counters")'>
+                    <i class="bi bi-stack"></i>
+                </button>
+                <button class="tab-button @(activeTab == "conditions" ? "active" : "")" title="Conditions" @onclick='() => State.SetActiveTab(combatant.Id, "conditions")'>
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    @if (combatant.Conditions.Count > 0)
+                    {
+                        <span class="tab-count">@combatant.Conditions.Count</span>
+                    }
+                </button>
+                <button class="tab-button @(activeTab == "notes" ? "active" : "")" title="Notes" @onclick='() => State.SetActiveTab(combatant.Id, "notes")'>
+                    <i class="bi bi-journal-text"></i>
+                </button>
+            </div>
+            <h3 class="tab-heading">@TabHeading(activeTab)</h3>
+
+            @if (activeTab == "details")
+            {
+                <div class="tab-content">
                     <div class="stats-section">
                         <div class="stats-row">
                             <div class="stats-row-main">
@@ -179,18 +189,10 @@
                         </div>
                     </div>
                 </div>
-                }
-            </div>
-
-            <div class="accordion-section">
-                <button class="accordion-header" aria-expanded="@rollsOpen" @onclick='() => State.ToggleSection(combatant.Id, "rolls")'>
-                    <i class="bi bi-dice-6"></i>
-                    <span class="accordion-title">Dice Rolls</span>
-                    <i class="bi @(rollsOpen ? "bi-chevron-up" : "bi-chevron-down") accordion-chevron"></i>
-                </button>
-            @if (rollsOpen)
+            }
+            else if (activeTab == "rolls")
             {
-                <div class="accordion-body">
+                <div class="tab-content">
                     <div class="section-header">
                         <span></span>
                         <button class="btn btn-sm" @onclick="() => _showAddRoll = !_showAddRoll"><i class="bi bi-plus-lg"></i> Add roll</button>
@@ -282,17 +284,9 @@
                     }
                 </div>
             }
-            </div>
-
-            <div class="accordion-section">
-                <button class="accordion-header" aria-expanded="@countersOpen" @onclick='() => State.ToggleSection(combatant.Id, "counters")'>
-                    <i class="bi bi-stack"></i>
-                    <span class="accordion-title">Counters</span>
-                    <i class="bi @(countersOpen ? "bi-chevron-up" : "bi-chevron-down") accordion-chevron"></i>
-                </button>
-            @if (countersOpen)
+            else if (activeTab == "counters")
             {
-                <div class="accordion-body">
+                <div class="tab-content">
                     <div class="section-header">
                         <span></span>
                         <button class="btn btn-sm" @onclick="() => _showAddCounter = !_showAddCounter"><i class="bi bi-plus-lg"></i> Add counter</button>
@@ -376,21 +370,9 @@
                     }
                 </div>
             }
-            </div>
-
-            <div class="accordion-section">
-                <button class="accordion-header" aria-expanded="@conditionsOpen" @onclick='() => State.ToggleSection(combatant.Id, "conditions")'>
-                    <i class="bi bi-exclamation-triangle-fill"></i>
-                    <span class="accordion-title">Conditions</span>
-                    @if (combatant.Conditions.Count > 0)
-                    {
-                        <span class="accordion-count">@combatant.Conditions.Count</span>
-                    }
-                    <i class="bi @(conditionsOpen ? "bi-chevron-up" : "bi-chevron-down") accordion-chevron"></i>
-                </button>
-            @if (conditionsOpen)
+            else if (activeTab == "conditions")
             {
-                <div class="accordion-body">
+                <div class="tab-content">
                     <div class="section-header">
                         <span></span>
                         <button class="btn btn-sm" @onclick="() => _showAddCondition = !_showAddCondition">
@@ -433,17 +415,9 @@
                     }
                 </div>
             }
-            </div>
-
-            <div class="accordion-section">
-                <button class="accordion-header" aria-expanded="@notesOpen" @onclick='() => State.ToggleSection(combatant.Id, "notes")'>
-                    <i class="bi bi-journal-text"></i>
-                    <span class="accordion-title">Notes</span>
-                    <i class="bi @(notesOpen ? "bi-chevron-up" : "bi-chevron-down") accordion-chevron"></i>
-                </button>
-                @if (notesOpen)
-                {
-                <div class="accordion-body">
+            else if (activeTab == "notes")
+            {
+                <div class="tab-content">
                     <div class="section-header">
                         <span></span>
                         <button class="btn btn-sm" @onclick="() => _editingNotes = !_editingNotes">
@@ -475,8 +449,7 @@
                         <div class="notes-view">@((MarkupString)NotesMarkdown.ToHtml(combatant.Notes))</div>
                     }
                 </div>
-                }
-            </div>
+            }
         </div>
 
         @if (!string.IsNullOrEmpty(_error))
@@ -517,6 +490,16 @@
     private bool _editingNotes;
     private ElementReference _notesTextareaRef;
     private IJSObjectReference? _notesToolbarModule;
+
+    private static string TabHeading(string tab) => tab switch
+    {
+        "details" => "Details",
+        "rolls" => "Dice Rolls",
+        "counters" => "Counters",
+        "conditions" => "Conditions",
+        "notes" => "Notes",
+        _ => tab
+    };
 
     private static bool HasPortrait(Combatant c) => !string.IsNullOrEmpty(c.PortraitBase64);
 

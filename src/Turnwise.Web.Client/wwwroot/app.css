@@ -1154,78 +1154,76 @@ button:hover {
     margin-bottom: 0.6rem;
 }
 
-/* The character panel's collapsible sections. Any number can be open at once. No
-   overflow:hidden on .accordion-section - the row dropdown menus must be free to spill out. */
-.accordion {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
+.section {
+    border: 1px solid var(--tw-panel-border);
+    border-radius: var(--tw-radius-md);
+    padding: 0.85rem;
     margin-bottom: 0.75rem;
 }
 
-.accordion-section {
-    border: 1px solid var(--tw-panel-border);
-    border-radius: var(--tw-radius-md);
-}
-
-.accordion-header {
+.tab-bar {
     display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    width: 100%;
-    background: transparent;
-    border: none;
-    border-radius: var(--tw-radius-md);
-    padding: 0.75rem 0.85rem;
-    color: var(--tw-text);
-    font-weight: 600;
-    font-size: 0.92rem;
-    text-align: left;
+    gap: 0.3rem;
+    border-bottom: 1px solid var(--tw-panel-border);
+    margin: -0.85rem -0.85rem 0;
+    padding: 0.4rem 0.5rem;
 }
 
-.accordion-header:hover {
+.tab-button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.3rem;
+    height: 2.3rem;
+    padding: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--tw-radius-sm);
+    color: var(--tw-text-dim);
+    font-size: 1rem;
+}
+
+.tab-button:hover {
     background: var(--tw-inset-bg);
     border-color: transparent;
     color: var(--tw-text);
 }
 
-.accordion-header[aria-expanded="true"] {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-    border-bottom: 1px solid var(--tw-panel-border);
+.tab-button.active {
+    background: var(--tw-accent-soft);
+    color: var(--tw-accent);
 }
 
-.accordion-title {
-    flex: 1;
-}
-
-.accordion-chevron {
-    color: var(--tw-text-faint);
-}
-
-.accordion-body {
-    padding: 0.85rem;
-}
-
-.accordion-count {
+.tab-count {
+    position: absolute;
+    top: 0.1rem;
+    right: 0.1rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 1.1rem;
-    height: 1.1rem;
-    padding: 0 0.3rem;
+    min-width: 1rem;
+    height: 1rem;
+    padding: 0 0.25rem;
     border-radius: 999px;
     background: var(--tw-accent);
     color: #fff;
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     font-weight: 700;
 }
 
-.accordion-body .section-header {
+.tab-heading {
+    margin: 0.75rem 0 0.6rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--tw-text);
+}
+
+.tab-content .section-header {
     margin-bottom: 0.5rem;
 }
 
-.accordion ul {
+.section ul {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -1603,8 +1601,8 @@ button:hover {
     text-decoration: underline;
 }
 
-/* Overrides the ".accordion ul" reset above (list-style/display/flex), which is meant for
-   the roll/counter lists and otherwise leaks into any <ul>/<ol> under .accordion. */
+/* Overrides the ".section ul" reset above (list-style/display/flex), which is meant for
+   the roll/counter lists and otherwise leaks into any <ul>/<ol> under .section. */
 .notes-view ul, .notes-view ol {
     display: block;
     list-style: revert;

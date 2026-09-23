@@ -12,7 +12,7 @@ public sealed class EncounterSessionState
     private readonly HashSet<Guid> _bulkSelectedIds = [];
     private readonly Dictionary<Guid, string> _rollFilters = new();
     private readonly Dictionary<Guid, string> _counterFilters = new();
-    private readonly Dictionary<Guid, HashSet<string>> _openSections = new();
+    private readonly Dictionary<Guid, string> _activeTabs = new();
     private Encounter? _undoSnapshot;
 
     public Encounter Current { get; private set; } = new();
@@ -37,7 +37,7 @@ public sealed class EncounterSessionState
         _bulkSelectedIds.Clear();
         _rollFilters.Clear();
         _counterFilters.Clear();
-        _openSections.Clear();
+        _activeTabs.Clear();
         _undoSnapshot = null;
         NotifyChanged();
     }
@@ -118,25 +118,10 @@ public sealed class EncounterSessionState
 
     public void SetCounterFilter(Guid combatantId, string filter) => _counterFilters[combatantId] = filter;
 
-    private const string DefaultOpenSection = "rolls";
+    /// <summary>Which of the Details/Dice Rolls/Counters/Conditions/Notes tabs a combatant's panel was last showing. Defaults to Dice Rolls.</summary>
+    public string GetActiveTab(Guid combatantId) => _activeTabs.GetValueOrDefault(combatantId, "rolls");
 
-    /// <summary>Whether a character-panel section (details/rolls/counters/conditions/notes) is expanded for a combatant. Several can be open at once; only Dice Rolls starts open.</summary>
-    public bool IsSectionOpen(Guid combatantId, string section) =>
-        _openSections.TryGetValue(combatantId, out var open) ? open.Contains(section) : section == DefaultOpenSection;
-
-    public void ToggleSection(Guid combatantId, string section)
-    {
-        if (!_openSections.TryGetValue(combatantId, out var open))
-        {
-            open = [DefaultOpenSection];
-            _openSections[combatantId] = open;
-        }
-
-        if (!open.Remove(section))
-        {
-            open.Add(section);
-        }
-    }
+    public void SetActiveTab(Guid combatantId, string tab) => _activeTabs[combatantId] = tab;
 
     /// <summary>
     /// Snapshots the current encounter so a following <see cref="Undo"/> can restore it. Call

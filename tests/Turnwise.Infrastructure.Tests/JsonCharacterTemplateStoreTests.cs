@@ -99,4 +99,68 @@ public class JsonCharacterTemplateStoreTests
         Assert.Null(loaded.Counters[0].Category);
         Assert.Null(loaded.MaxHpFormula);
     }
+
+    [Fact]
+    public async Task SaveAsync_WritesAReadmeFieldDocumentingTheFormat()
+    {
+        var store = new JsonCharacterTemplateStore();
+        var goblin = new Combatant("Goblin", 7);
+
+        await using var stream = new MemoryStream();
+        await store.SaveAsync(goblin, stream);
+        stream.Position = 0;
+        using var doc = await System.Text.Json.JsonDocument.ParseAsync(stream);
+
+        Assert.True(doc.RootElement.TryGetProperty("_readme", out var readme));
+        var text = readme.GetString();
+        Assert.NotNull(text);
+        Assert.Contains("dice notation", text);
+        Assert.Contains("Ability", text);
+    }
+
+    [Fact]
+    public async Task NamedRoll_AbilityCategory_RoundTrips()
+    {
+        var store = new JsonCharacterTemplateStore();
+        var fighter = new Combatant("Fighter", 20);
+        fighter.AddNamedRoll("Strength Check", Domain.ValueObjects.DiceFormula.Parse("1d20+3"), category: NamedRollCategory.Ability);
+
+        await using var stream = new MemoryStream();
+        await store.SaveAsync(fighter, stream);
+        stream.Position = 0;
+        var loaded = await store.LoadAsync(stream);
+
+        Assert.Equal(NamedRollCategory.Ability, loaded.NamedRolls[0].Category);
+    }
+
+    [Fact]
+    public async Task LoadAsync_MalformedJson_ThrowsFormatExceptionWithLocationInfo()
+    {
+        var json = """
+        {
+          "SchemaVersion": 7,
+          "Character": {
+            "Name": "Broken Goblin",
+            "MaxHp": 7,
+          }
+        """; // trailing comma + missing closing brace
+        var store = new JsonCharacterTemplateStore();
+        await using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
+
+        var ex = await Assert.ThrowsAsync<FormatException>(() => store.LoadAsync(stream));
+
+        Assert.Contains("Character file isn't valid JSON", ex.Message);
+        Assert.IsType<System.Text.Json.JsonException>(ex.InnerException);
+    }
+
+    [Fact]
+    public async Task LoadAsync_EmptyFile_ThrowsFormatExceptionMentioningTheFileKind()
+    {
+        var store = new JsonCharacterTemplateStore();
+        await using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes("null"));
+
+        var ex = await Assert.ThrowsAsync<FormatException>(() => store.LoadAsync(stream));
+
+        Assert.Contains("Character file is empty", ex.Message);
+    }
 }

@@ -5,5 +5,8 @@ public enum NamedRollCategory
 {
     Weapon,
     Magic,
-    Skill
+    Skill,
+
+    /// <summary>Core ability checks (e.g. Strength, Dexterity in D&D-style systems).</summary>
+    Ability
 }

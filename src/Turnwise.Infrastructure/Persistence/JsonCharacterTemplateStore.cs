@@ -13,8 +13,7 @@ public sealed class JsonCharacterTemplateStore : ICharacterTemplateStore
 
     public async Task<Combatant> LoadAsync(Stream stream, CancellationToken cancellationToken = default)
     {
-        var fileDto = await JsonSerializer.DeserializeAsync<CharacterFileDto>(stream, SerializerOptions, cancellationToken)
-            ?? throw new FormatException("Character file is empty or invalid.");
+        var fileDto = await JsonFileReader.DeserializeAsync<CharacterFileDto>(stream, SerializerOptions, "Character", cancellationToken);
 
         if (fileDto.SchemaVersion < SchemaVersions.MinSupportedCharacterSchemaVersion)
         {
